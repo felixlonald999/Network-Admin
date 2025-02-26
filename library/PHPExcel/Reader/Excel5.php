@@ -1925,9 +1925,9 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
 
         // offset: 0; size: 2; 0 = base 1900, 1 = base 1904
         PHPExcel_Shared_Date::setExcelCalendar(PHPExcel_Shared_Date::CALENDAR_WINDOWS_1900);
-        if (ord($recordData{0}) == 1) {
-            PHPExcel_Shared_Date::setExcelCalendar(PHPExcel_Shared_Date::CALENDAR_MAC_1904);
-        }
+        // if (ord($recordData{0}) == 1) {
+        //     PHPExcel_Shared_Date::setExcelCalendar(PHPExcel_Shared_Date::CALENDAR_MAC_1904);
+        // }
     }
 
 
@@ -1988,23 +1988,23 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
             }
 
             // offset: 10; size: 1; underline type
-            $underlineType = ord($recordData{10});
-            switch ($underlineType) {
-                case 0x00:
-                    break; // no underline
-                case 0x01:
-                    $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLE);
-                    break;
-                case 0x02:
-                    $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_DOUBLE);
-                    break;
-                case 0x21:
-                    $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLEACCOUNTING);
-                    break;
-                case 0x22:
-                    $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_DOUBLEACCOUNTING);
-                    break;
-            }
+            // $underlineType = ord($recordData{10});
+            // switch ($underlineType) {
+                // case 0x00:
+                //     break; // no underline
+                // case 0x01:
+                //     $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLE);
+                //     break;
+                // case 0x02:
+                //     $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_DOUBLE);
+                //     break;
+                // case 0x21:
+                //     $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_SINGLEACCOUNTING);
+                //     break;
+                // case 0x22:
+                //     $objFont->setUnderline(PHPExcel_Style_Font::UNDERLINE_DOUBLEACCOUNTING);
+                //     break;
+            // }
 
             // offset: 11; size: 1; font family
             // offset: 12; size: 1; character set
@@ -2125,85 +2125,85 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
 
             // offset:  6; size: 1; Alignment and text break
             // bit 2-0, mask 0x07; horizontal alignment
-            $horAlign = (0x07 & ord($recordData{6})) >> 0;
-            switch ($horAlign) {
-                case 0:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_GENERAL);
-                    break;
-                case 1:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
-                    break;
-                case 2:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-                    break;
-                case 3:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
-                    break;
-                case 4:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_FILL);
-                    break;
-                case 5:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_JUSTIFY);
-                    break;
-                case 6:
-                    $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER_CONTINUOUS);
-                    break;
-            }
+            // $horAlign = (0x07 & ord($recordData{6})) >> 0;
+            // switch ($horAlign) {
+            //     case 0:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_GENERAL);
+            //         break;
+            //     case 1:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_LEFT);
+            //         break;
+            //     case 2:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+            //         break;
+            //     case 3:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_RIGHT);
+            //         break;
+            //     case 4:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_FILL);
+            //         break;
+            //     case 5:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_JUSTIFY);
+            //         break;
+            //     case 6:
+            //         $objStyle->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER_CONTINUOUS);
+            //         break;
+            // }
             // bit 3, mask 0x08; wrap text
-            $wrapText = (0x08 & ord($recordData{6})) >> 3;
-            switch ($wrapText) {
-                case 0:
-                    $objStyle->getAlignment()->setWrapText(false);
-                    break;
-                case 1:
-                    $objStyle->getAlignment()->setWrapText(true);
-                    break;
-            }
+            // $wrapText = (0x08 & ord($recordData{6})) >> 3;
+            // switch ($wrapText) {
+            //     case 0:
+            //         $objStyle->getAlignment()->setWrapText(false);
+            //         break;
+            //     case 1:
+            //         $objStyle->getAlignment()->setWrapText(true);
+            //         break;
+            // }
             // bit 6-4, mask 0x70; vertical alignment
-            $vertAlign = (0x70 & ord($recordData{6})) >> 4;
-            switch ($vertAlign) {
-                case 0:
-                    $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
-                    break;
-                case 1:
-                    $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-                    break;
-                case 2:
-                    $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_BOTTOM);
-                    break;
-                case 3:
-                    $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_JUSTIFY);
-                    break;
-            }
+            // $vertAlign = (0x70 & ord($recordData{6})) >> 4;
+            // switch ($vertAlign) {
+            //     case 0:
+            //         $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+            //         break;
+            //     case 1:
+            //         $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+            //         break;
+            //     case 2:
+            //         $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_BOTTOM);
+            //         break;
+            //     case 3:
+            //         $objStyle->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_JUSTIFY);
+            //         break;
+            // }
 
             if ($this->version == self::XLS_BIFF8) {
                 // offset:  7; size: 1; XF_ROTATION: Text rotation angle
-                $angle = ord($recordData{7});
-                $rotation = 0;
-                if ($angle <= 90) {
-                    $rotation = $angle;
-                } elseif ($angle <= 180) {
-                    $rotation = 90 - $angle;
-                } elseif ($angle == 255) {
-                    $rotation = -165;
-                }
-                $objStyle->getAlignment()->setTextRotation($rotation);
+                // $angle = ord($recordData{7});
+                // $rotation = 0;
+                // if ($angle <= 90) {
+                //     $rotation = $angle;
+                // } elseif ($angle <= 180) {
+                //     $rotation = 90 - $angle;
+                // } elseif ($angle == 255) {
+                //     $rotation = -165;
+                // }
+                // $objStyle->getAlignment()->setTextRotation($rotation);
 
                 // offset:  8; size: 1; Indentation, shrink to cell size, and text direction
                 // bit: 3-0; mask: 0x0F; indent level
-                $indent = (0x0F & ord($recordData{8})) >> 0;
-                $objStyle->getAlignment()->setIndent($indent);
+                // $indent = (0x0F & ord($recordData{8})) >> 0;
+                // $objStyle->getAlignment()->setIndent($indent);
 
                 // bit: 4; mask: 0x10; 1 = shrink content to fit into cell
-                $shrinkToFit = (0x10 & ord($recordData{8})) >> 4;
-                switch ($shrinkToFit) {
-                    case 0:
-                        $objStyle->getAlignment()->setShrinkToFit(false);
-                        break;
-                    case 1:
-                        $objStyle->getAlignment()->setShrinkToFit(true);
-                        break;
-                }
+                // $shrinkToFit = (0x10 & ord($recordData{8})) >> 4;
+                // switch ($shrinkToFit) {
+                //     case 0:
+                //         $objStyle->getAlignment()->setShrinkToFit(false);
+                //         break;
+                //     case 1:
+                //         $objStyle->getAlignment()->setShrinkToFit(true);
+                //         break;
+                // }
 
                 // offset:  9; size: 1; Flags used for attribute groups
 
@@ -2275,24 +2275,24 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                 // BIFF5
 
                 // offset: 7; size: 1; Text orientation and flags
-                $orientationAndFlags = ord($recordData{7});
+                // $orientationAndFlags = ord($recordData{7});
 
                 // bit: 1-0; mask: 0x03; XF_ORIENTATION: Text orientation
-                $xfOrientation = (0x03 & $orientationAndFlags) >> 0;
-                switch ($xfOrientation) {
-                    case 0:
-                        $objStyle->getAlignment()->setTextRotation(0);
-                        break;
-                    case 1:
-                        $objStyle->getAlignment()->setTextRotation(-165);
-                        break;
-                    case 2:
-                        $objStyle->getAlignment()->setTextRotation(90);
-                        break;
-                    case 3:
-                        $objStyle->getAlignment()->setTextRotation(-90);
-                        break;
-                }
+                // $xfOrientation = (0x03 & $orientationAndFlags) >> 0;
+                // switch ($xfOrientation) {
+                //     case 0:
+                //         $objStyle->getAlignment()->setTextRotation(0);
+                //         break;
+                //     case 1:
+                //         $objStyle->getAlignment()->setTextRotation(-165);
+                //         break;
+                //     case 2:
+                //         $objStyle->getAlignment()->setTextRotation(90);
+                //         break;
+                //     case 3:
+                //         $objStyle->getAlignment()->setTextRotation(-90);
+                //         break;
+                // }
 
                 // offset: 8; size: 4; cell border lines and background area
                 $borderAndBackground = self::getInt4d($recordData, 8);
@@ -2399,14 +2399,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $fill = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getFill();
-                                $fill->getStartColor()->setRGB($rgb);
-                                unset($fill->startcolorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $fill = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getFill();
+                            //     $fill->getStartColor()->setRGB($rgb);
+                            //     unset($fill->startcolorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 5:        // fill end color
@@ -2414,14 +2414,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $fill = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getFill();
-                                $fill->getEndColor()->setRGB($rgb);
-                                unset($fill->endcolorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $fill = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getFill();
+                            //     $fill->getEndColor()->setRGB($rgb);
+                            //     unset($fill->endcolorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 7:        // border color top
@@ -2429,14 +2429,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $top = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getTop();
-                                $top->getColor()->setRGB($rgb);
-                                unset($top->colorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $top = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getTop();
+                            //     $top->getColor()->setRGB($rgb);
+                            //     unset($top->colorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 8:        // border color bottom
@@ -2444,14 +2444,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $bottom = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getBottom();
-                                $bottom->getColor()->setRGB($rgb);
-                                unset($bottom->colorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $bottom = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getBottom();
+                            //     $bottom->getColor()->setRGB($rgb);
+                            //     unset($bottom->colorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 9:        // border color left
@@ -2459,14 +2459,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $left = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getLeft();
-                                $left->getColor()->setRGB($rgb);
-                                unset($left->colorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $left = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getLeft();
+                            //     $left->getColor()->setRGB($rgb);
+                            //     unset($left->colorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 10:        // border color right
@@ -2474,14 +2474,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $right = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getRight();
-                                $right->getColor()->setRGB($rgb);
-                                unset($right->colorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $right = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getRight();
+                            //     $right->getColor()->setRGB($rgb);
+                            //     unset($right->colorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 11:        // border color diagonal
@@ -2489,14 +2489,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $diagonal = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getDiagonal();
-                                $diagonal->getColor()->setRGB($rgb);
-                                unset($diagonal->colorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $diagonal = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getBorders()->getDiagonal();
+                            //     $diagonal->getColor()->setRGB($rgb);
+                            //     unset($diagonal->colorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                     case 13:    // font color
@@ -2504,14 +2504,14 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                         $xclrValue = substr($extData, 4, 4); // color value (value based on color type)
 
                         if ($xclfType == 2) {
-                            $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
+                            // $rgb = sprintf('%02X%02X%02X', ord($xclrValue{0}), ord($xclrValue{1}), ord($xclrValue{2}));
 
-                            // modify the relevant style property
-                            if (isset($this->mapCellXfIndex[$ixfe])) {
-                                $font = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getFont();
-                                $font->getColor()->setRGB($rgb);
-                                unset($font->colorIndex); // normal color index does not apply, discard
-                            }
+                            // // modify the relevant style property
+                            // if (isset($this->mapCellXfIndex[$ixfe])) {
+                            //     $font = $this->phpExcel->getCellXfByIndex($this->mapCellXfIndex[$ixfe])->getFont();
+                            //     $font->getColor()->setRGB($rgb);
+                            //     unset($font->colorIndex); // normal color index does not apply, discard
+                            // }
                         }
                         break;
                 }
@@ -2546,15 +2546,15 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
 
             if ($isBuiltIn) {
                 // offset: 2; size: 1; identifier for built-in style
-                $builtInId = ord($recordData{2});
+                // $builtInId = ord($recordData{2});
 
-                switch ($builtInId) {
-                    case 0x00:
-                        // currently, we are not using this for anything
-                        break;
-                    default:
-                        break;
-                }
+                // switch ($builtInId) {
+                //     case 0x00:
+                //         // currently, we are not using this for anything
+                //         break;
+                //     default:
+                //         break;
+                // }
             } else {
                 // user-defined; not supported by PHPExcel
             }
@@ -2611,23 +2611,23 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
         $this->pos += 4 + $length;
 
         // offset: 4; size: 1; sheet state
-        switch (ord($recordData{4})) {
-            case 0x00:
-                $sheetState = PHPExcel_Worksheet::SHEETSTATE_VISIBLE;
-                break;
-            case 0x01:
-                $sheetState = PHPExcel_Worksheet::SHEETSTATE_HIDDEN;
-                break;
-            case 0x02:
-                $sheetState = PHPExcel_Worksheet::SHEETSTATE_VERYHIDDEN;
-                break;
-            default:
-                $sheetState = PHPExcel_Worksheet::SHEETSTATE_VISIBLE;
-                break;
-        }
+        // switch (ord($recordData{4})) {
+        //     case 0x00:
+        //         $sheetState = PHPExcel_Worksheet::SHEETSTATE_VISIBLE;
+        //         break;
+        //     case 0x01:
+        //         $sheetState = PHPExcel_Worksheet::SHEETSTATE_HIDDEN;
+        //         break;
+        //     case 0x02:
+        //         $sheetState = PHPExcel_Worksheet::SHEETSTATE_VERYHIDDEN;
+        //         break;
+        //     default:
+        //         $sheetState = PHPExcel_Worksheet::SHEETSTATE_VISIBLE;
+        //         break;
+        // }
 
         // offset: 5; size: 1; sheet type
-        $sheetType = ord($recordData{5});
+        // $sheetType = ord($recordData{5});
 
         // offset: 6; size: var; sheet name
         if ($this->version == self::XLS_BIFF8) {
@@ -2805,7 +2805,7 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
             // offset: 2; size: 1; keyboard shortcut
 
             // offset: 3; size: 1; length of the name (character count)
-            $nlen = ord($recordData{3});
+            // $nlen = ord($recordData{3});
 
             // offset: 4; size: 2; size of the formula data (it can happen that this is zero)
             // note: there can also be additional data, this is not included in $flen

@@ -9,7 +9,7 @@
                 <a class="nav-link" href="index.php">Data Faktur</a>
             </li>
             <li class="nav-item active">
-                <a class="nav-link" href="faktur.php">Data Service</a>
+                <a class="nav-link" href="service.php">Data Service</a>
             </li>
             <li class="nav-item active">
                 <a class="nav-link" href="import_faktur.php">Import Faktur</a>

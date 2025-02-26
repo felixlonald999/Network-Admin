@@ -82,24 +82,24 @@ class PHPExcel_Reader_Excel2007 extends PHPExcel_Reader_Abstract implements PHPE
 
         $xl = false;
         // Load file
-        $zip = new $zipClass;
-        if ($zip->open($pFilename) === true) {
-            // check if it is an OOXML archive
-            $rels = simplexml_load_string($this->securityScan($this->getFromZipArchive($zip, "_rels/.rels")), 'SimpleXMLElement', PHPExcel_Settings::getLibXmlLoaderOptions());
-            if ($rels !== false) {
-                foreach ($rels->Relationship as $rel) {
-                    switch ($rel["Type"]) {
-                        case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument":
-                            if (basename($rel["Target"]) == 'workbook.xml') {
-                                $xl = true;
-                            }
-                            break;
+        // $zip = new $zipClass;
+        // if ($zip->open($pFilename) === true) {
+        //     // check if it is an OOXML archive
+        //     $rels = simplexml_load_string($this->securityScan($this->getFromZipArchive($zip, "_rels/.rels")), 'SimpleXMLElement', PHPExcel_Settings::getLibXmlLoaderOptions());
+        //     if ($rels !== false) {
+        //         foreach ($rels->Relationship as $rel) {
+        //             switch ($rel["Type"]) {
+        //                 case "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument":
+        //                     if (basename($rel["Target"]) == 'workbook.xml') {
+        //                         $xl = true;
+        //                     }
+        //                     break;
 
-                    }
-                }
-            }
-            $zip->close();
-        }
+        //             }
+        //         }
+        //     }
+        //     $zip->close();
+        // }
 
         return $xl;
     }
