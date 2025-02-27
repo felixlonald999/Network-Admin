@@ -2,6 +2,7 @@
 require("autoload.php");
 require("../library/PHPExcel.php");
 
+
 // Data dealer untuk pengecekan area
 $stmt   = "SELECT * FROM `dealer`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
@@ -55,6 +56,7 @@ $errors_summary = [
     'not_main_dealer'       => ['count' => 0, 'rows' => []],
 ];
 
+//ini yang perlu diubah
 try {
     // Muat file Excel
     $excel_obj = PHPExcel_IOFactory::load($target_file);

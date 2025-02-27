@@ -2888,17 +2888,17 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
             $pos += 2;
 
             // option flags
-            $optionFlags = ord($recordData{$pos});
-            ++$pos;
+            // $optionFlags = ord($recordData{$pos});
+            // ++$pos;
 
-            // bit: 0; mask: 0x01; 0 = compressed; 1 = uncompressed
-            $isCompressed = (($optionFlags & 0x01) == 0) ;
+            // // bit: 0; mask: 0x01; 0 = compressed; 1 = uncompressed
+            // $isCompressed = (($optionFlags & 0x01) == 0) ;
 
-            // bit: 2; mask: 0x02; 0 = ordinary; 1 = Asian phonetic
-            $hasAsian = (($optionFlags & 0x04) != 0);
+            // // bit: 2; mask: 0x02; 0 = ordinary; 1 = Asian phonetic
+            // $hasAsian = (($optionFlags & 0x04) != 0);
 
-            // bit: 3; mask: 0x03; 0 = ordinary; 1 = Rich-Text
-            $hasRichText = (($optionFlags & 0x08) != 0);
+            // // bit: 3; mask: 0x03; 0 = ordinary; 1 = Rich-Text
+            // $hasRichText = (($optionFlags & 0x08) != 0);
 
             if ($hasRichText) {
                 // number of Rich-Text formatting runs
@@ -2955,47 +2955,47 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
 
                     // repeated option flags
                     // OpenOffice.org documentation 5.21
-                    $option = ord($recordData{$pos});
-                    ++$pos;
+                    // $option = ord($recordData{$pos});
+                    // ++$pos;
 
-                    if ($isCompressed && ($option == 0)) {
-                        // 1st fragment compressed
-                        // this fragment compressed
-                        $len = min($charsLeft, $limitpos - $pos);
-                        $retstr .= substr($recordData, $pos, $len);
-                        $charsLeft -= $len;
-                        $isCompressed = true;
-                    } elseif (!$isCompressed && ($option != 0)) {
-                        // 1st fragment uncompressed
-                        // this fragment uncompressed
-                        $len = min($charsLeft * 2, $limitpos - $pos);
-                        $retstr .= substr($recordData, $pos, $len);
-                        $charsLeft -= $len / 2;
-                        $isCompressed = false;
-                    } elseif (!$isCompressed && ($option == 0)) {
-                        // 1st fragment uncompressed
-                        // this fragment compressed
-                        $len = min($charsLeft, $limitpos - $pos);
-                        for ($j = 0; $j < $len; ++$j) {
-                            $retstr .= $recordData{$pos + $j} . chr(0);
-                        }
-                        $charsLeft -= $len;
-                        $isCompressed = false;
-                    } else {
-                        // 1st fragment compressed
-                        // this fragment uncompressed
-                        $newstr = '';
-                        for ($j = 0; $j < strlen($retstr); ++$j) {
-                            $newstr .= $retstr[$j] . chr(0);
-                        }
-                        $retstr = $newstr;
-                        $len = min($charsLeft * 2, $limitpos - $pos);
-                        $retstr .= substr($recordData, $pos, $len);
-                        $charsLeft -= $len / 2;
-                        $isCompressed = false;
-                    }
+                    // if ($isCompressed && ($option == 0)) {
+                    //     // 1st fragment compressed
+                    //     // this fragment compressed
+                    //     $len = min($charsLeft, $limitpos - $pos);
+                    //     $retstr .= substr($recordData, $pos, $len);
+                    //     $charsLeft -= $len;
+                    //     $isCompressed = true;
+                    // } elseif (!$isCompressed && ($option != 0)) {
+                    //     // 1st fragment uncompressed
+                    //     // this fragment uncompressed
+                    //     $len = min($charsLeft * 2, $limitpos - $pos);
+                    //     $retstr .= substr($recordData, $pos, $len);
+                    //     $charsLeft -= $len / 2;
+                    //     $isCompressed = false;
+                    // } elseif (!$isCompressed && ($option == 0)) {
+                    //     // 1st fragment uncompressed
+                    //     // this fragment compressed
+                    //     $len = min($charsLeft, $limitpos - $pos);
+                    //     for ($j = 0; $j < $len; ++$j) {
+                    //         $retstr .= $recordData{$pos + $j} . chr(0);
+                    //     }
+                    //     $charsLeft -= $len;
+                    //     $isCompressed = false;
+                    // } else {
+                    //     // 1st fragment compressed
+                    //     // this fragment uncompressed
+                    //     $newstr = '';
+                    //     for ($j = 0; $j < strlen($retstr); ++$j) {
+                    //         $newstr .= $retstr[$j] . chr(0);
+                    //     }
+                    //     $retstr = $newstr;
+                    //     $len = min($charsLeft * 2, $limitpos - $pos);
+                    //     $retstr .= substr($recordData, $pos, $len);
+                    //     $charsLeft -= $len / 2;
+                    //     $isCompressed = false;
+                    // }
 
-                    $pos += $len;
+                    // $pos += $len;
                 }
             }
 
@@ -3883,7 +3883,7 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
         // We can apparently not rely on $isPartOfSharedFormula. Even when $isPartOfSharedFormula = true
         // the formula data may be ordinary formula data, therefore we need to check
         // explicitly for the tExp token (0x01)
-        $isPartOfSharedFormula = $isPartOfSharedFormula && ord($formulaStructure{2}) == 0x01;
+        // $isPartOfSharedFormula = $isPartOfSharedFormula && ord($formulaStructure{2}) == 0x01;
 
         if ($isPartOfSharedFormula) {
             // part of shared formula which means there will be a formula with a tExp token and nothing else
@@ -3906,41 +3906,41 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
             $xfIndex = self::getInt2d($recordData, 4);
 
             // offset: 6; size: 8; result of the formula
-            if ((ord($recordData{6}) == 0) && (ord($recordData{12}) == 255) && (ord($recordData{13}) == 255)) {
-                // String formula. Result follows in appended STRING record
-                $dataType = PHPExcel_Cell_DataType::TYPE_STRING;
+            // if ((ord($recordData{6}) == 0) && (ord($recordData{12}) == 255) && (ord($recordData{13}) == 255)) {
+            //     // String formula. Result follows in appended STRING record
+            //     $dataType = PHPExcel_Cell_DataType::TYPE_STRING;
 
-                // read possible SHAREDFMLA record
-                $code = self::getInt2d($this->data, $this->pos);
-                if ($code == self::XLS_TYPE_SHAREDFMLA) {
-                    $this->readSharedFmla();
-                }
+            //     // read possible SHAREDFMLA record
+            //     $code = self::getInt2d($this->data, $this->pos);
+            //     if ($code == self::XLS_TYPE_SHAREDFMLA) {
+            //         $this->readSharedFmla();
+            //     }
 
-                // read STRING record
-                $value = $this->readString();
-            } elseif ((ord($recordData{6}) == 1)
-                && (ord($recordData{12}) == 255)
-                && (ord($recordData{13}) == 255)) {
-                // Boolean formula. Result is in +2; 0=false, 1=true
-                $dataType = PHPExcel_Cell_DataType::TYPE_BOOL;
-                $value = (bool) ord($recordData{8});
-            } elseif ((ord($recordData{6}) == 2)
-                && (ord($recordData{12}) == 255)
-                && (ord($recordData{13}) == 255)) {
-                // Error formula. Error code is in +2
-                $dataType = PHPExcel_Cell_DataType::TYPE_ERROR;
-                $value = PHPExcel_Reader_Excel5_ErrorCode::lookup(ord($recordData{8}));
-            } elseif ((ord($recordData{6}) == 3)
-                && (ord($recordData{12}) == 255)
-                && (ord($recordData{13}) == 255)) {
-                // Formula result is a null string
-                $dataType = PHPExcel_Cell_DataType::TYPE_NULL;
-                $value = '';
-            } else {
-                // forumla result is a number, first 14 bytes like _NUMBER record
-                $dataType = PHPExcel_Cell_DataType::TYPE_NUMERIC;
-                $value = self::extractNumber(substr($recordData, 6, 8));
-            }
+            //     // read STRING record
+            //     $value = $this->readString();
+            // } elseif ((ord($recordData{6}) == 1)
+            //     && (ord($recordData{12}) == 255)
+            //     && (ord($recordData{13}) == 255)) {
+            //     // Boolean formula. Result is in +2; 0=false, 1=true
+            //     $dataType = PHPExcel_Cell_DataType::TYPE_BOOL;
+            //     $value = (bool) ord($recordData{8});
+            // } elseif ((ord($recordData{6}) == 2)
+            //     && (ord($recordData{12}) == 255)
+            //     && (ord($recordData{13}) == 255)) {
+            //     // Error formula. Error code is in +2
+            //     $dataType = PHPExcel_Cell_DataType::TYPE_ERROR;
+            //     $value = PHPExcel_Reader_Excel5_ErrorCode::lookup(ord($recordData{8}));
+            // } elseif ((ord($recordData{6}) == 3)
+            //     && (ord($recordData{12}) == 255)
+            //     && (ord($recordData{13}) == 255)) {
+            //     // Formula result is a null string
+            //     $dataType = PHPExcel_Cell_DataType::TYPE_NULL;
+            //     $value = '';
+            // } else {
+            //     // forumla result is a number, first 14 bytes like _NUMBER record
+            //     $dataType = PHPExcel_Cell_DataType::TYPE_NUMERIC;
+            //     $value = self::extractNumber(substr($recordData, 6, 8));
+            // }
 
             $cell = $this->phpSheet->getCell($columnString . ($row + 1));
             if (!$this->readDataOnly) {
@@ -3996,7 +3996,7 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
         // offset: 6, size: 1; not used
 
         // offset: 7, size: 1; number of existing FORMULA records for this shared formula
-        $no = ord($recordData{7});
+        // $no = ord($recordData{7});
 
         // offset: 8, size: var; Binary token array of the shared formula
         $formula = substr($recordData, 8);
@@ -4062,10 +4062,10 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
             $xfIndex = self::getInt2d($recordData, 4);
 
             // offset: 6; size: 1; the boolean value or error value
-            $boolErr = ord($recordData{6});
+            // $boolErr = ord($recordData{6});
 
             // offset: 7; size: 1; 0=boolean; 1=error
-            $isError = ord($recordData{7});
+            // $isError = ord($recordData{7});
 
             $cell = $this->phpSheet->getCell($columnString . ($row + 1));
             switch ($isError) {
@@ -4447,7 +4447,7 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
 
         if (!$this->readDataOnly) {
             // offset: 0; size: 1; pane identifier
-            $paneId = ord($recordData{0});
+            // $paneId = ord($recordData{0});
 
             // offset: 1; size: 2; index to row of the active cell
             $r = self::getInt2d($recordData, 1);
@@ -4598,11 +4598,12 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
                 $hyperlinkType = 'UNC';
             } elseif (!$isFileLinkOrUrl) {
                 $hyperlinkType = 'workbook';
-            } elseif (ord($recordData{$offset}) == 0x03) {
-                $hyperlinkType = 'local';
-            } elseif (ord($recordData{$offset}) == 0xE0) {
-                $hyperlinkType = 'URL';
             }
+            // } elseif (ord($recordData{$offset}) == 0x03) {
+            //     $hyperlinkType = 'local';
+            // } elseif (ord($recordData{$offset}) == 0xE0) {
+            //     $hyperlinkType = 'URL';
+            // }
 
             switch ($hyperlinkType) {
                 case 'URL':
@@ -6886,10 +6887,10 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
         $lr = self::getInt2d($subData, 2) + 1;
 
         // offset: 4; size: 1; index to first column
-        $fc = ord($subData{4});
+        // $fc = ord($subData{4});
 
         // offset: 5; size: 1; index to last column
-        $lc = ord($subData{5});
+        // $lc = ord($subData{5});
 
         // check values
         if ($fr > $lr || $fc > $lc) {
@@ -7294,13 +7295,13 @@ class PHPExcel_Reader_Excel5 extends PHPExcel_Reader_Abstract implements PHPExce
     private static function readRGB($rgb)
     {
         // offset: 0; size 1; Red component
-        $r = ord($rgb{0});
+        // $r = ord($rgb{0});
 
         // offset: 1; size: 1; Green component
-        $g = ord($rgb{1});
+        // $g = ord($rgb{1});
 
         // offset: 2; size: 1; Blue component
-        $b = ord($rgb{2});
+        // $b = ord($rgb{2});
 
         // HEX notation, e.g. 'FF00FC'
         $rgb = sprintf('%02X%02X%02X', $r, $g, $b);

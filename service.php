@@ -15,7 +15,7 @@ $stmt       = "SELECT DISTINCT area FROM `dealer` WHERE area != '' ORDER BY area
 $query      = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 $data_area  = mysqli_fetch_all($query, MYSQLI_ASSOC);
 
-$stmt           = "SELECT * FROM `faktur` WHERE YEAR(tanggal_beli_motor) = '$tahun' AND MONTH(tanggal_beli_motor) = '$bulan' AND area_dealer = '$area'";
+$stmt           = "SELECT * FROM `service` WHERE YEAR(tanggal_beli_motor) = '$tahun' AND MONTH(tanggal_beli_motor) = '$bulan' AND area_dealer = '$area'";
 $query          = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 $data_faktur    = mysqli_fetch_all($query, MYSQLI_ASSOC);
 ?>
