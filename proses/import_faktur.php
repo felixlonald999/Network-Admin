@@ -60,7 +60,6 @@ $errors_summary = [
     'not_main_dealer'       => ['count' => 0, 'rows' => []],
 ];
 
-//ini yang perlu diubah
 try {
     // Muat file Excel
     $excel_obj = IOFactory::load($target_file);

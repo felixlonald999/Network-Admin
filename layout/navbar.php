@@ -15,6 +15,9 @@
                 <a class="nav-link" href="import_faktur.php">Import Faktur</a>
             </li>
             <li class="nav-item active">
+                <a class="nav-link" href="import_service.php">Import Service</a>
+            </li>
+            <li class="nav-item active">
                 <a class="nav-link" href="query.php">Query</a>
             </li>
             <li class="nav-item active">
