@@ -63,7 +63,7 @@ $errors_summary = [
 //ini yang perlu diubah
 try {
     // Muat file Excel
-    $excel_obj = PHPExcel_IOFactory::load($target_file);
+    $excel_obj = IOFactory::load($target_file);
     $worksheet = $excel_obj->getActiveSheet();
     $excel_row = $worksheet->getHighestRow();
 
