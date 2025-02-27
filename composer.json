@@ -1,0 +1,11 @@
+{
+    "name": "stsj/network-admin",
+    "autoload": {
+        "psr-4": {
+            "Stsj\\NetworkAdmin\\": "src/"
+        }
+    },
+    "require": {
+        "phpoffice/phpspreadsheet": "^4.0"
+    }
+}

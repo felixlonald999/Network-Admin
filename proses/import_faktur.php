@@ -1,6 +1,10 @@
 <?php
 require("autoload.php");
+require("../vendor/autoload.php");
 require("../library/PHPExcel.php");
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 
 // Data dealer untuk pengecekan area
