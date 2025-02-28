@@ -81,7 +81,7 @@ $data_service    = mysqli_fetch_all($query, MYSQLI_ASSOC);
                                     <button class="btn btn-primary font-weight-bold">
                                         <i class="fa fa-filter pr-1"></i> Filter
                                     </button>
-                                    <a href="proses/export/faktur.php?<?= http_build_query($_GET) ?>" class="btn btn-success font-weight-bold">
+                                    <a href="proses/export/service.php?<?= http_build_query($_GET) ?>" class="btn btn-success font-weight-bold">
                                         <i class="fa fa-file-export pr-1"></i> Excel
                                     </a>
                                 </div>

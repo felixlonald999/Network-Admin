@@ -1,7 +1,7 @@
 <?php
 require("autoload.php");
 require("../vendor/autoload.php");
-require("../library/PHPExcel.php");
+// require("../library/PHPExcel.php");
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -21,7 +21,16 @@ while($row = mysqli_fetch_array($query)) {
 $stmt   = "SELECT * FROM `service`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 while($row = mysqli_fetch_array($query)) {
-    $service[$row['nomor_rangka']] = $row['nomor_rangka'];
+    $service[$row['nomor_rangka']] = $row;
+}
+
+$stmt   = "SELECT * FROM `history_service`";
+$query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
+while($row = mysqli_fetch_array($query)) {
+    $history[$row['tanggal_service']] = [
+        'tanggal_service' => $row['tanggal_service'],
+        'nomor_rangka' => $row['nomor_rangka'],
+    ];
 }
 
 $_SESSION['import_errors']  = [];
@@ -56,6 +65,7 @@ if (!move_uploaded_file($_FILES["filedata"]["tmp_name"], $target_file)) {
 }
 
 $imported_count = 0;
+$imported_history = 0;
 $errors_summary = [
     'no_hp_invalid'         => ['count' => 0, 'rows' => []],
     'duplicate'             => ['count' => 0, 'rows' => []],
@@ -74,7 +84,8 @@ try {
         throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
     }
 
-    $import_data = [];
+    $import_service = [];
+    $import_history = [];
     $batch = 1000;
 
     // Proses data Excel
@@ -82,45 +93,89 @@ try {
         $kode_dealer = $worksheet->getCell('C' . $row)->getValue(); // dealer
 
         if(isset($dealer[$kode_dealer])){
-            $nama_dealer                = $dealer[$kode_dealer]['nama_dealer']; // Dealer Name
-            $area_dealer                = $dealer[$kode_dealer]['area']; // Area
-            $nomor_rangka               = $worksheet->getCell('V' . $row)->getValue(); // Frame No.
-            $nopol                      = $worksheet->getCell('G' . $row)->getValue(); // plate
-            $tipe_motor                 = $worksheet->getCell('U' . $row)->getValue(); // Model
-            $nama_konsumen              = $worksheet->getCell('M' . $row)->getValue(); // Customer Name
-            $alamat                     = $worksheet->getCell('Q' . $row)->getValue(); // Address1
-            $no_hp                      = $worksheet->getCell('R' . $row)->getValue(); // Phone
-            $no_ktp                     = $worksheet->getCell('N' . $row)->getValue(); // KTP No.
-            $kilometer                  = $worksheet->getCell('X' . $row)->getValue(); // Kilometer
-            $tipe_service               = $worksheet->getCell('AL' . $row)->getValue(); // Service Type
-            $tanggal_terakhir_service   = date("Y-m-d", strtotime($worksheet->getCell('AG' . $row)->getValue())); // Service Date
+            $nama_dealer        = $dealer[$kode_dealer]['nama_dealer']; // Dealer Name
+            $area_dealer        = $dealer[$kode_dealer]['area']; // Area
+            $nopol              = $worksheet->getCell('G' . $row)->getValue(); // plate
+            $nama_konsumen      = $worksheet->getCell('M' . $row)->getValue(); // Customer Name
+            $no_ktp             = $worksheet->getCell('N' . $row)->getValue(); // KTP No.
+            $alamat             = $worksheet->getCell('Q' . $row)->getValue(); // Address1
+            $no_hp              = $worksheet->getCell('R' . $row)->getValue(); // Phone
+            $tipe_motor         = $worksheet->getCell('U' . $row)->getValue(); // Model
+            $nomor_rangka       = $worksheet->getCell('V' . $row)->getValue(); // Frame No.
+            $kilometer          = $worksheet->getCell('X' . $row)->getValue(); // Kilometer
+            $tipe_service       = $worksheet->getCell('AL' . $row)->getValue(); // Service Type
+            $sparepart          = $worksheet->getCell('AO' . $row)->getValue(); // Sparepart
+            $tanggal_service    = date("Y-m-d", strtotime($worksheet->getCell('BJ' . $row)->getValue())); // Service Date
 
             // Validasi data
             if (empty($nomor_rangka)) {
                 $errors_summary['empty_nomor_rangka']['count']++;
                 $errors_summary['empty_nomor_rangka']['rows'][] = $row;
             }
-            else if(strlen($no_hp) < 11 || strlen($no_hp) > 14){
+            else if(strlen(str_replace(' ', '', $no_hp)) < 11 || strlen(str_replace(' ', '', $no_hp)) > 14){
                 $errors_summary['no_hp_invalid']['count']++;
                 $errors_summary['no_hp_invalid']['rows'][] = $row;
             }
-            else if (isset($service[$nomor_rangka])) {
-                $errors_summary['duplicate']['count']++;
-                $errors_summary['duplicate']['rows'][] = $row;
-            }
             else{
-                $import_data[] = [
-                    $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor,
-                    $nama_konsumen, $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_terakhir_service
-                ];
-                
-                if (count($import_data) >= $batch) {
-                    // insert_batch($conn, $import_data);
-                    dd($import_data);
-                    $import_data = []; // Reset array setelah insert
+                if(isset($history[$tanggal_service]) && isset($history[$nomor_rangka])) {
+                    $errors_summary['same_service_date']['count']++;
+                    $errors_summary['same_service_date']['rows'][] = $row;
+                } else {
+                    $import_history[] = [
+                        $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $nama_konsumen, $no_hp, $no_ktp,
+                        $kilometer, $tipe_service, $tanggal_service, $sparepart
+                    ];
+
+                    if (count($import_history) >= $batch) {
+                        history_insert($conn, $import_history);
+                        $import_history = []; // Reset array setelah insert
+                    }
                 }
 
-                $imported_count++;
+                //Check nomor rangka ada di service
+                if(isset($service[$nomor_rangka])){
+                    $db_nama = $service[$nomor_rangka]['nama_konsumen'];
+                    $db_no_hp = $service[$nomor_rangka]['no_hp'];
+                    $db_no_ktp = $service[$nomor_rangka]['no_ktp'];
+                    $db_tanggal_service = strtotime($service[$nomor_rangka]['tanggal_terakhir_service']);
+                    $tanggal_terakhir_service = strtotime($tanggal_service);
+
+                    if ($tanggal_terakhir_service > $db_tanggal_service) { // Jika tanggal baru lebih dari yang ada di database, update
+                        $query = "UPDATE service 
+                                 SET tanggal_terakhir_service = ?
+                                 WHERE nomor_rangka = ?";
+                        $stmt_update = $conn->prepare($query);
+                        $stmt_update->bind_param("ss", $tanggal_service, $nomor_rangka);
+                        $stmt_update->execute();
+
+                        if ($db_nama != $nama_konsumen || $db_no_hp != $no_hp || $db_no_ktp != $no_ktp) {
+                            $update_query = "UPDATE service 
+                                            SET nama_konsumen = ?, no_ktp = ?, no_hp = ?
+                                            WHERE nomor_rangka = ?";
+                            $stmt_update = $conn->prepare($update_query);
+                            $stmt_update->bind_param("ssss", $nama_konsumen, $no_ktp, $no_hp, $nomor_rangka);
+                            $stmt_update->execute();
+                        }
+                        $errors_summary['updated_data']['count']++;
+                        $errors_summary['updated_data']['rows'][] = $row;
+                    } else {
+                        $errors_summary['duplicate']['count']++;
+                        $errors_summary['duplicate']['rows'][] = $row;
+                    }
+                } else {
+                    $import_service[] = [
+                        $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor,
+                        $nama_konsumen, $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service
+                    ];
+                    
+                    if (count($import_service) >= $batch) {
+                        insert_batch($conn, $import_service);
+                        $import_service = []; // Reset array setelah insert
+                    }
+    
+                    $imported_count++;
+                }
+
             }
         }
         else{
@@ -129,33 +184,8 @@ try {
         }
     }
 
-    if (!empty($import_data)) {
-        // Buat placeholder (?,?,?,...) untuk setiap data yang diimport
-        $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
-        
-        $sql = "INSERT INTO service (
-                    kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, tipe_motor, 
-                    nama_konsumen, alamat, no_hp, no_ktp, kilometer, tipe_service, tanggal_terakhir_service, created_at
-                ) VALUES $placeholders";
-    
-        $stmt = $conn->prepare($sql);
-        
-        // Flatten array menjadi satu dimensi untuk bind_param
-        $values = [];
-        foreach ($import_data as $data) {
-            foreach ($data as $val) {
-                $values[] = $val;
-            }
-        }
-    
-        // Buat format tipe data untuk bind_param (misalnya "ssssssssssss")
-        $types = str_repeat('s', 12 * count($import_data)); // Semua dianggap string ('s')
-    
-        // Gunakan call_user_func_array untuk bind_param
-        $stmt->bind_param($types, ...$values);
-    
-        // Eksekusi query
-        $stmt->execute();
+    if (!empty($import_service)) {
+        insert_batch($conn, $import_service);
     }
 
     // Buat ringkasan hasil impor
@@ -177,6 +207,71 @@ try {
 catch (Exception $e) {
     $_SESSION['import_errors'][] = $e->getMessage();
 }
+
+
+function history_insert($conn, $import_data){
+    $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
+
+    // Menyiapkan SQL
+    $sql = "INSERT INTO history_service (
+                kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, nama_konsumen, 
+                no_hp, no_ktp, kilometer, tipe_service, tanggal_service, sparepart, created_at
+            ) VALUES $placeholders";
+
+    // Menyiapkan statement
+    $stmt = $conn->prepare($sql);
+
+    // Flatten array menjadi satu dimensi
+    $values = [];
+    foreach ($import_data as $data) {
+        foreach ($data as $val) {
+            $values[] = $val;
+        }
+    }
+
+    // Menghitung jumlah tipe data (misalnya semua data bertipe string)
+    $types = str_repeat('s', count($values)); // Semua data dianggap string 
+    $stmt->bind_param($types, ...$values);
+
+    if ($stmt->execute()) {
+        echo "Batch insert berhasil!";
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+}
+
+function insert_batch($conn, $import_data) {
+    $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
+
+    // Menyiapkan SQL
+    $sql = "INSERT INTO service (
+                kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, tipe_motor, 
+                nama_konsumen, alamat, no_hp, no_ktp, kilometer, tipe_service, tanggal_terakhir_service, created_at
+            ) VALUES $placeholders";
+
+    // Menyiapkan statement
+    $stmt = $conn->prepare($sql);
+
+    // Flatten array menjadi satu dimensi
+    $values = [];
+    foreach ($import_data as $data) {
+        foreach ($data as $val) {
+            $values[] = $val;
+        }
+    }
+
+    // Menghitung jumlah tipe data (misalnya semua data bertipe string)
+    $types = str_repeat('s', count($values)); // Semua data dianggap string 
+    $stmt->bind_param($types, ...$values);
+
+    if ($stmt->execute()) {
+        echo "Batch insert berhasil!";
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+}
+
+// echo $countt;
 
 header('location: ../import_service.php');
 exit;
