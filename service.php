@@ -27,7 +27,7 @@ $data_service    = mysqli_fetch_all($query, MYSQLI_ASSOC);
                 <div class="card">
                     <div class="card-header bg-primary text-white">List Data Service</div>
                     <div class="card-body">
-                        <form action="index.php" method="GET">
+                        <form action="service.php" method="GET">
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
