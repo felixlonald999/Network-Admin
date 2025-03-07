@@ -85,6 +85,7 @@ try {
             $warna_motor        = $worksheet->getCell('I' . $row)->getValue(); // Faktur Color
             $nama_konsumen      = $worksheet->getCell('P' . $row)->getValue(); // Customer Name
             $alamat             = $worksheet->getCell('Q' . $row)->getValue(); // Address1
+            $tanggal_lahir      = date("Y-m-d", strtotime($worksheet->getCell('X' . $row)->getValue())); // Birth Date
             $no_hp              = $worksheet->getCell('Y' . $row)->getValue(); // Phone
             $no_ktp             = $worksheet->getCell('AM' . $row)->getValue(); // KTP No.
             $tipe_pembelian     = $worksheet->getCell('AB' . $row)->getValue(); // Type of Purchase
@@ -106,7 +107,7 @@ try {
             else{
                 $import_data[] = [
                     $kode_dealer, $nama_dealer, $area_dealer, $tipe_motor, $warna_motor, $nomor_rangka,
-                    $nama_konsumen, $alamat, $no_hp, $no_ktp, $tipe_pembelian, $tanggal_beli_motor
+                    $nama_konsumen, $alamat, $tanggal_lahir, $no_hp, $no_ktp, $tipe_pembelian, $tanggal_beli_motor
                 ];
 
                 $imported_count++;
@@ -120,11 +121,11 @@ try {
 
     if (!empty($import_data)) {
         // Buat placeholder (?,?,?,...) untuk setiap data yang diimport
-        $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
+        $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
         
         $sql = "INSERT INTO faktur (
                     kode_dealer, nama_dealer, area_dealer, tipe_motor, warna_motor, nomor_rangka,
-                    nama_konsumen, alamat, no_hp, no_ktp, tipe_pembelian, tanggal_beli_motor, created_at
+                    nama_konsumen, alamat, tanggal_lahir, no_hp, no_ktp, tipe_pembelian, tanggal_beli_motor, created_at
                 ) VALUES $placeholders";
     
         $stmt = $conn->prepare($sql);
@@ -138,7 +139,7 @@ try {
         }
     
         // Buat format tipe data untuk bind_param (misalnya "ssssssssssss")
-        $types = str_repeat('s', 12 * count($import_data)); // Semua dianggap string ('s')
+        $types = str_repeat('s', 13 * count($import_data)); // Semua dianggap string ('s')
     
         // Gunakan call_user_func_array untuk bind_param
         $stmt->bind_param($types, ...$values);

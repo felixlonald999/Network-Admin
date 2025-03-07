@@ -144,8 +144,8 @@ try {
                     $db_no_ktp = $service[$nomor_rangka]['no_ktp'];
                     $db_kilometer = $service[$nomor_rangka]['kilometer'];
                     $db_tipe_service = $service[$nomor_rangka]['tipe_service'];
-                    $db_tanggal_service = strtotime($service[$nomor_rangka]['tanggal_terakhir_service']);
-                    $tanggal_terakhir_service = strtotime($tanggal_service);
+                    $db_tanggal_service = date("d-m-Y", strtotime($service[$nomor_rangka]['tanggal_terakhir_service']));
+                    $tanggal_terakhir_service = date("d-m-Y",strtotime($tanggal_service));
 
                     if ($tanggal_terakhir_service > $db_tanggal_service) { // Jika tanggal baru lebih dari yang ada di database, update
                         $query = "UPDATE service 
