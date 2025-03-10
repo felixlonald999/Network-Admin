@@ -67,6 +67,7 @@ if (!move_uploaded_file($_FILES["filedata"]["tmp_name"], $target_file)) {
 $imported_count = 0;
 $imported_history = 0;
 $errors_summary = [
+    'same_service_date'     => ['count' => 0, 'rows' => []],
     'no_hp_invalid'         => ['count' => 0, 'rows' => []],
     'duplicate'             => ['count' => 0, 'rows' => []],
     'empty_nomor_rangka'    => ['count' => 0, 'rows' => []],
@@ -117,7 +118,13 @@ try {
                 $errors_summary['no_hp_invalid']['rows'][] = $row;
             } 
             else{
-                if(isset($history[$tanggal_service]) && isset($history[$nomor_rangka])) {
+                $duplicate_norangka_history = array_column($import_history, 3);
+                $duplicate_tanggal_service_history = array_column($import_history, 10);
+
+                if(in_array($tanggal_service, $duplicate_tanggal_service_history) && in_array($nomor_rangka, $duplicate_norangka_history)){ //checking in array
+                    $errors_summary['same_service_date']['count']++;
+                    $errors_summary['same_service_date']['rows'][] = $row;
+                } else if (check_history_service($conn, $nomor_rangka, $tanggal_service)){ //checking in database history_service
                     $errors_summary['same_service_date']['count']++;
                     $errors_summary['same_service_date']['rows'][] = $row;
                 } else {
@@ -126,70 +133,114 @@ try {
                         $kilometer, $tipe_service, $tanggal_service, $sparepart
                     ];
 
+                    // dd($import_history);
+
                     if (count($import_history) >= $batch) {
                         history_insert($conn, $import_history);
                         $import_history = []; // Reset array setelah insert
                     }
                 }
 
-                //Check nomor rangka ada di service
-                if(isset($service[$nomor_rangka])){
-                    $db_kode_dealer = $service[$nomor_rangka]['kode_dealer'];
-                    $db_nama_dealer = $service[$nomor_rangka]['nama_dealer'];
-                    $db_area_dealer = $service[$nomor_rangka]['area_dealer'];
-                    $db_nopol = $service[$nomor_rangka]['nopol'];
-                    $db_nama = $service[$nomor_rangka]['nama_konsumen'];
-                    $db_alamat = $service[$nomor_rangka]['alamat'];
-                    $db_no_hp = $service[$nomor_rangka]['no_hp'];
-                    $db_no_ktp = $service[$nomor_rangka]['no_ktp'];
-                    $db_kilometer = $service[$nomor_rangka]['kilometer'];
-                    $db_tipe_service = $service[$nomor_rangka]['tipe_service'];
-                    $db_tanggal_service = date("d-m-Y", strtotime($service[$nomor_rangka]['tanggal_terakhir_service']));
-                    $tanggal_terakhir_service = date("d-m-Y",strtotime($tanggal_service));
+                $service_data = check_nomor_rangka($conn, $nomor_rangka);
+                $duplicate_nomor_rangka = array_column($import_service, 3);
+                // dd($service_data);
 
-                    if ($tanggal_terakhir_service > $db_tanggal_service) { // Jika tanggal baru lebih dari yang ada di database, update
-                        $query = "UPDATE service 
-                                 SET tanggal_terakhir_service = ?
-                                 WHERE nomor_rangka = ?";
+                if (in_array($nomor_rangka, $duplicate_nomor_rangka)) { //checking in array
+                    $index = array_search($nomor_rangka, $duplicate_nomor_rangka);
+                    $existing_data = $import_service[$index];
+                    // dd($existing_data);
+
+                    $check_tanggal_service = date("Y-m-d", strtotime($existing_data[12]));
+
+                    if ($tanggal_service > $check_tanggal_service) {
+                        $import_service[$index] = [
+                            $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor,
+                            $nama_konsumen, $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service
+                        ];
+                    }
+
+                } else if($service_data){ //checking in database service
+                    $check_db_tgl_service = date("Y-m-d", strtotime($service_data[0]['tanggal_terakhir_service']));
+                    if($tanggal_service > $check_db_tgl_service){
+                        $query = "UPDATE `service` 
+                                    SET tanggal_terakhir_service = ?
+                                    WHERE nomor_rangka = ?";
                         $stmt_update = $conn->prepare($query);
                         $stmt_update->bind_param("ss", $tanggal_service, $nomor_rangka);
                         $stmt_update->execute();
-
-                        if ($db_kode_dealer != $kode_dealer || $db_nama_dealer != $nama_dealer || $db_area_dealer != $area_dealer 
-                                || $db_nama_dealer != $nama_dealer || $db_area_dealer != $area_dealer || $db_nopol != $nopol 
-                                || $db_nama != $nama_konsumen || $db_alamat != $alamat || $db_no_hp != $no_hp || $db_no_ktp != $no_ktp
-                                || $db_kilometer != $kilometer || $db_tipe_service != $tipe_service) {
-                            $update_query = "UPDATE service 
-                                            SET kode_dealer = ?, nama_dealer = ?, area_dealer = ?, nopol = ?, nama_konsumen = ?, alamat = ?, no_ktp = ?, no_hp = ?, kilometer = ?, tipe_service = ?
-                                            WHERE nomor_rangka = ?";
-                            $stmt_update = $conn->prepare($update_query);
-                            $stmt_update->bind_param("sssssssssss", $kode_dealer, $nama_dealer, $area_dealer, $nopol, $nama_konsumen, $alamat, 
-                                                        $no_ktp, $no_hp, $kilometer, $tipe_service, $nomor_rangka);
-                            $stmt_update->execute();
-                        }
-                        $errors_summary['updated_data']['count']++;
-                        $errors_summary['updated_data']['rows'][] = $row;
-                    } else {
-                        $errors_summary['duplicate']['count']++;
-                        $errors_summary['duplicate']['rows'][] = $row;
                     }
+
                 } else {
                     $import_service[] = [
                         $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor,
                         $nama_konsumen, $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service
                     ];
-                    
+                            
                     if (count($import_service) >= $batch) {
                         insert_batch($conn, $import_service);
                         $import_service = []; // Reset array setelah insert
                     }
-    
+            
                     $imported_count++;
                 }
 
+                
+                //Check nomor rangka ada di service
+                // if(isset($service[$nomor_rangka])){
+                //     $db_kode_dealer = $service[$nomor_rangka]['kode_dealer'];
+                //     $db_nama_dealer = $service[$nomor_rangka]['nama_dealer'];
+                //     $db_area_dealer = $service[$nomor_rangka]['area_dealer'];
+                //     $db_nopol = $service[$nomor_rangka]['nopol'];
+                //     $db_nama = $service[$nomor_rangka]['nama_konsumen'];
+                //     $db_alamat = $service[$nomor_rangka]['alamat'];
+                //     $db_no_hp = $service[$nomor_rangka]['no_hp'];
+                //     $db_no_ktp = $service[$nomor_rangka]['no_ktp'];
+                //     $db_kilometer = $service[$nomor_rangka]['kilometer'];
+                //     $db_tipe_service = $service[$nomor_rangka]['tipe_service'];
+                //     $db_tanggal_service = date("d-m-Y", strtotime($service[$nomor_rangka]['tanggal_terakhir_service']));
+                //     $tanggal_terakhir_service = date("d-m-Y",strtotime($tanggal_service));
+
+                //     if ($tanggal_terakhir_service > $db_tanggal_service) { // Jika tanggal baru lebih dari yang ada di database, update
+                //         $query = "UPDATE service 
+                //                  SET tanggal_terakhir_service = ?
+                //                  WHERE nomor_rangka = ?";
+                //         $stmt_update = $conn->prepare($query);
+                //         $stmt_update->bind_param("ss", $tanggal_service, $nomor_rangka);
+                //         $stmt_update->execute();
+
+                //         if ($db_kode_dealer != $kode_dealer || $db_nama_dealer != $nama_dealer || $db_area_dealer != $area_dealer 
+                //                 || $db_nama_dealer != $nama_dealer || $db_area_dealer != $area_dealer || $db_nopol != $nopol 
+                //                 || $db_nama != $nama_konsumen || $db_alamat != $alamat || $db_no_hp != $no_hp || $db_no_ktp != $no_ktp
+                //                 || $db_kilometer != $kilometer || $db_tipe_service != $tipe_service) {
+                //             $update_query = "UPDATE service 
+                //                             SET kode_dealer = ?, nama_dealer = ?, area_dealer = ?, nopol = ?, nama_konsumen = ?, alamat = ?, no_ktp = ?, no_hp = ?, kilometer = ?, tipe_service = ?
+                //                             WHERE nomor_rangka = ?";
+                //             $stmt_update = $conn->prepare($update_query);
+                //             $stmt_update->bind_param("sssssssssss", $kode_dealer, $nama_dealer, $area_dealer, $nopol, $nama_konsumen, $alamat, 
+                //                                         $no_ktp, $no_hp, $kilometer, $tipe_service, $nomor_rangka);
+                //             $stmt_update->execute();
+                //         }
+                //         $errors_summary['updated_data']['count']++;
+                //         $errors_summary['updated_data']['rows'][] = $row;
+                //     } else {
+                //         $errors_summary['duplicate']['count']++;
+                //         $errors_summary['duplicate']['rows'][] = $row;
+                //     }
+                // } else {
+                //     $import_service[] = [
+                //         $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor,
+                //         $nama_konsumen, $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service
+                //     ];
+                    
+                //     if (count($import_service) >= $batch) {
+                //         insert_batch($conn, $import_service);
+                //         $import_service = []; // Reset array setelah insert
+                //     }
+    
+                //     $imported_count++;
+                // }
             }
-        }
-        else{
+        } else{
             $errors_summary['not_main_dealer']['count']++;
             $errors_summary['not_main_dealer']['rows'][] = $row;
         }
@@ -206,6 +257,9 @@ try {
     // Buat ringkasan hasil impor
     $_SESSION['import_summary']['success']  = "$imported_count data berhasil diimpor.";
 
+    if ($errors_summary['same_service_date']['count'] > 0) {
+        $_SESSION['import_summary']['same_service_date'] = "{$errors_summary['same_service_date']['count']} data tidak diimpor karena Tanggal Service di hari yang sama pada baris: " . implode(', ', $errors_summary['same_service_date']['rows']);
+    }
     if ($errors_summary['no_hp_invalid']['count'] > 0) {
         $_SESSION['import_summary']['no_hp_invalid'] = "{$errors_summary['no_hp_invalid']['count']} data tidak diimpor karena No. HP tidak sesuai standar pada baris: " . implode(', ', $errors_summary['no_hp_invalid']['rows']);
     }
@@ -223,6 +277,34 @@ catch (Exception $e) {
     $_SESSION['import_errors'][] = $e->getMessage();
 }
 
+
+function check_nomor_rangka($conn, $nomor_rangka){
+    $query = "SELECT * FROM `service` WHERE nomor_rangka = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $nomor_rangka);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows > 0) {
+        // Mengambil semua hasil sebagai array
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row; // Menambahkan data ke dalam array
+        }
+        return $data;  // Mengembalikan semua data yang ditemukan
+    } else {
+        return null;
+    }
+}
+
+function check_history_service ($conn, $nomor_rangka, $tanggal_service){
+    $query = "SELECT * FROM `history_service` WHERE `nomor_rangka` = ? AND `tanggal_service` = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("ss", $nomor_rangka, $tanggal_service);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->num_rows > 0;
+}
 
 function history_insert($conn, $import_data){
     $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');

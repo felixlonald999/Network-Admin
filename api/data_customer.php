@@ -1,47 +1,51 @@
 <?php
 require("autoload.php");
 
-$stmt_service = "SELECT nomor_rangka, COUNT(*) AS ro_service, MAX(tanggal_service) AS tanggal_terakhir_service 
+$query_service = "SELECT no_ktp, nomor_rangka, COUNT(id) AS ro_service, MAX(tanggal_service) AS tanggal_terakhir_service 
                     FROM history_service 
-                    GROUP BY nomor_rangka";
-$result_service = $conn->query($stmt_service);
-
-// Menyimpan jumlah service untuk setiap nomor rangka
-$service_data = [];
-while ($row = $result_service->fetch_assoc()) {
+                    GROUP BY no_ktp, nomor_rangka";
+$result_service = $conn->query($query_service);
+while ($row = $result_service->fetch_assoc()) { //masih perlu dibenerin
     $service_data[$row['nomor_rangka']] = [
         'ro_service' => $row['ro_service'],
         'tanggal_terakhir_service' => $row['tanggal_terakhir_service']
     ];
 }
 
-$stmt_nomor_rangka = "SELECT no_ktp, nomor_rangka FROM faktur";
-$result_nomor_rangka = $conn->query($stmt_nomor_rangka);
-
-$faktur_data = [];
+$query_nomor_rangka = "SELECT no_ktp, nomor_rangka FROM faktur";
+$result_nomor_rangka = $conn->query($query_nomor_rangka);
 while ($row = $result_nomor_rangka->fetch_assoc()) {
     $faktur_data[$row['no_ktp']] = $row['nomor_rangka'];
 }
 
 // Ambil data customer dari faktur
-$stmt_faktur = "SELECT f.no_ktp, f.nama_konsumen, f.no_hp, f.tanggal_lahir, COUNT(DISTINCT f.nomor_rangka) AS ro_sales,  
+$query_faktur = "SELECT f.no_ktp, f.nama_konsumen, f.no_hp, f.tanggal_lahir, COUNT(DISTINCT f.nomor_rangka) AS ro_sales,  
             MAX(f.tanggal_beli_motor) AS tanggal_terakhir_beli, 
             (SELECT area_dealer FROM faktur AS f2 
             WHERE f2.no_ktp = f.no_ktp AND f2.tanggal_beli_motor = f.tanggal_beli_motor LIMIT 1) AS area_dealer
         FROM faktur AS f
         GROUP BY f.no_ktp, f.nama_konsumen"; 
 
-$result = $conn->query($stmt_faktur);
+$result = $conn->query($query_faktur);
+while ($row = $result->fetch_assoc()) {
+    $faktur[$row['no_ktp']] = $row;
+}
+
+dd($faktur);
 
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $ktp = $row['no_ktp'];
         $nama = $row['nama_konsumen'];
         $nohp = $row['no_hp'];
-        $tanggal_lahir = $row['tanggal_lahir'];
+        $tanggal_lahir = date("Y-m-d", strtotime($row['tanggal_lahir']));
         $ro_sales = $row['ro_sales']; // Dihitung dari nomor rangka yang berbeda berdasar ktp
-        $tanggal_terakhir_beli = $row['tanggal_terakhir_beli']; // Tanggal pembelian terakhir
+        $tanggal_terakhir_beli = date("Y-m-d", strtotime($row['tanggal_terakhir_beli'])); // Tanggal pembelian terakhir
         $area_dealer = $row['area_dealer'];
+
+        $total_service = 0;
+        $tanggal_terakhir_service = null;
+
         
         // Cek apakah customer sudah ada di data_customer
         $check = $conn->prepare("SELECT ktp_customer FROM data_customer WHERE ktp_customer = ?");
