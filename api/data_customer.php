@@ -1,8 +1,9 @@
 <?php
 require("autoload.php");
 
-$query_service = "SELECT no_ktp, nomor_rangka, COUNT(id) AS ro_service, MAX(tanggal_service) AS tanggal_terakhir_service 
-                    FROM history_service 
+$query_service = "SELECT f.no_ktp, hs.nomor_rangka, COUNT(hs.id) AS ro_service, MAX(hs.tanggal_service) AS tanggal_terakhir_service 
+                    FROM history_service AS hs INNER JOIN `faktur` as f ON f.nomor_rangka = hs.nomor_rangka
+                    WHERE f.no_ktp = hs.no_ktp
                     GROUP BY no_ktp, nomor_rangka";
 $result_service = $conn->query($query_service);
 while ($row = $result_service->fetch_assoc()) { //masih perlu dibenerin
@@ -23,7 +24,7 @@ $query_faktur = "SELECT f.no_ktp, f.nama_konsumen, f.no_hp, f.tanggal_lahir, COU
             MAX(f.tanggal_beli_motor) AS tanggal_terakhir_beli, 
             (SELECT area_dealer FROM faktur AS f2 
             WHERE f2.no_ktp = f.no_ktp AND f2.tanggal_beli_motor = f.tanggal_beli_motor LIMIT 1) AS area_dealer
-        FROM faktur AS f
+        FROM faktur AS f LEFT JOIN faktur as f2 
         GROUP BY f.no_ktp, f.nama_konsumen"; 
 
 $result = $conn->query($query_faktur);
@@ -48,7 +49,8 @@ if ($result->num_rows > 0) {
 
         
         // Cek apakah customer sudah ada di data_customer
-        $check = $conn->prepare("SELECT ktp_customer FROM data_customer WHERE ktp_customer = ?");
+        $query_check = "SELECT ktp_customer FROM data_customer WHERE ktp_customer = ?";
+        $check = $conn->prepare($query_check);
         $check->bind_param("s", $ktp);
         $check->execute();
         $check->store_result();
