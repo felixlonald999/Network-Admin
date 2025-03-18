@@ -4,8 +4,13 @@ require("autoload.php");
 header('Content-Type: application/json');
 
 try {
-    // Ambil parameter select (kolom yang ingin diambil)
-    $selectColumns = isset($_GET['select']) ? explode(',', $_GET['select']) : ['*'];
+    // Pastikan metode request adalah POST
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new Exception("Hanya metode POST yang diizinkan.");
+    }
+
+    // Ambil parameter POST
+    $selectColumns = isset($_POST['select']) ? explode(',', $_POST['select']) : ['*'];
     $selectQuery = implode(',', $selectColumns);
 
     // Ambil parameter where untuk kondisi
@@ -13,9 +18,14 @@ try {
     $bindParams = [];
     $bindTypes = '';
 
-    if (isset($_GET['where']) && is_array($_GET['where'])) {
-        foreach ($_GET['where'] as $column => $value) {
-            if (is_array($value)) {
+    if (isset($_POST['where']) && is_array($_POST['where'])) {
+        foreach ($_POST['where'] as $column => $value) {
+            if (preg_match('/^(YEAR|MONTH)\(/i', $column)) {
+                // YEAR() adalah fungsi SQL, tidak boleh ada backtick
+                $whereConditions[] = "$column = ?";
+                $bindParams[] = $value;
+                $bindTypes .= 'i';
+            } else if (is_array($value)) {
                 // Jika ada banyak nilai untuk satu kolom, gunakan IN (...)
                 $placeholders = implode(',', array_fill(0, count($value), '?'));
                 $whereConditions[] = "`$column` IN ($placeholders)";
@@ -29,11 +39,10 @@ try {
             }
         }
     }
-    
 
     // Tambahkan pagination
-    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 2000; // Default 100 row per request
-    $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;
+    $limit = isset($_POST['limit']) ? (int) $_POST['limit'] : 2000; // Default 2000 row per request
+    $offset = isset($_POST['offset']) ? (int) $_POST['offset'] : 0;
 
     // Susun query
     $query = "SELECT $selectQuery FROM `data_customer`";
@@ -64,11 +73,18 @@ try {
         $countQuery .= " WHERE " . implode(" AND ", $whereConditions);
     }
 
+    // Eksekusi query untuk total data
     $countStmt = $conn->prepare($countQuery);
+    
     if (!empty($whereConditions)) {
+        // Hanya ambil parameter yang relevan untuk binding
+        // Mengurangi dua elemen terakhir dari bindParams karena limit dan offset
         $countStmt->bind_param(substr($bindTypes, 0, -2), ...array_slice($bindParams, 0, -2));
     }
+    
     $countStmt->execute();
+    
+    // Ambil total row
     $totalRow = $countStmt->get_result()->fetch_assoc()['total'];
 
     // Output JSON
