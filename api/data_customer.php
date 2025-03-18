@@ -1,6 +1,15 @@
 <?php
 require("autoload.php");
 
+// Fetch existing customer data
+$query_existing_customers = "SELECT ktp_customer, nama_customer FROM data_customer";
+$result_existing_customers = $conn->query($query_existing_customers);
+$existing_customers = [];
+while ($row = $result_existing_customers->fetch_assoc()) {
+    $existing_customers[$row['ktp_customer'] . $row['nama_customer']] = true;
+}
+
+// Fetch service data
 $query_service = "SELECT hs.no_ktp, hs.nama_konsumen, hs.no_hp, COUNT(hs.id) AS ro_service, MAX(hs.tanggal_service) AS tanggal_terakhir_service 
                     FROM history_service AS hs
                     GROUP BY no_ktp, nama_konsumen";
@@ -10,7 +19,7 @@ while ($row = $result_service->fetch_assoc()) {
     $service_data[$row['no_ktp']] = $row;
 }
 
-// Ambil data customer dari faktur
+// Fetch customer data from faktur
 $query_faktur = "SELECT f.id, f.no_ktp, f.nama_konsumen, f.no_hp, f.tanggal_lahir, COUNT(DISTINCT f.nomor_rangka) AS ro_sales,  
                     MAX(f.tanggal_beli_motor) AS tanggal_terakhir_beli, f2.area_dealer
                     FROM faktur AS f 
@@ -22,10 +31,6 @@ $result = $conn->query($query_faktur);
 $end_time = microtime(true);
 $query_time = $end_time - $start_time;
 echo "Waktu eksekusi query: " . number_format($query_time, 6) . " detik";
-// while ($row = $result->fetch_assoc()) {
-//     $faktur[$row['no_ktp']] = $row;
-// }
-
 
 $insert_data = [];
 $counter = 0;
@@ -37,26 +42,18 @@ while ($row = $result->fetch_assoc()) {
     $nama = $row['nama_konsumen'];
     $nohp = $row['no_hp'];
     $tanggal_lahir = date("Y-m-d", strtotime($row['tanggal_lahir']));
-    $ro_sales = $row['ro_sales']; // Dihitung dari nomor rangka yang berbeda berdasar ktp
-    $tanggal_terakhir_beli = date("Y-m-d", strtotime($row['tanggal_terakhir_beli'])); // Tanggal pembelian terakhir
+    $ro_sales = $row['ro_sales'];
+    $tanggal_terakhir_beli = date("Y-m-d", strtotime($row['tanggal_terakhir_beli']));
     $area_dealer = $row['area_dealer'];
 
-    if (!check_data_customer($conn, $ktp, $nama)) {
-        if (isset($service_data[$ktp])) {
-            $ro_service = $service_data[$ktp]['ro_service'];
-            $tanggal_terakhir_service = date("Y-m-d", strtotime($service_data[$ktp]['tanggal_terakhir_service']));
+    if (!isset($existing_customers[$ktp . $nama])) {
+        $ro_service = isset($service_data[$ktp]) ? $service_data[$ktp]['ro_service'] : 0;
+        $tanggal_terakhir_service = isset($service_data[$ktp]) ? date("Y-m-d", strtotime($service_data[$ktp]['tanggal_terakhir_service'])) : null;
 
-            $insert_data[] = [
-                $ktp, $nama, $nohp, $tanggal_lahir, $ro_sales, $ro_service, $tanggal_terakhir_beli, 
-                $tanggal_terakhir_service, $area_dealer, $id_faktur_terakhir
-            ];
-
-        } else {
-            $insert_data[] = [
-                    $ktp, $nama, $nohp, $tanggal_lahir, $ro_sales, 0, $tanggal_terakhir_beli,
-                   null, $area_dealer, $id_faktur_terakhir
-            ];
-        }
+        $insert_data[] = [
+            $ktp, $nama, $nohp, $tanggal_lahir, $ro_sales, $ro_service, $tanggal_terakhir_beli, 
+            $tanggal_terakhir_service, $area_dealer, $id_faktur_terakhir
+        ];
 
         $counter++;
         if ($counter % $batch_size == 0) {
@@ -75,7 +72,7 @@ $count = 0;
 $service_customer = [];
 
 foreach ($service_data as $ktp => $data) {
-    if (!check_data_customer($conn, $ktp, $data['nama_konsumen'])) {
+    if (!isset($existing_customers[$ktp . $data['nama_konsumen']])) {
         $ktp_customer = $data['no_ktp'];
         $nama = $data['nama_konsumen'];
         $nohp = $data['no_hp'];
@@ -100,7 +97,6 @@ if (!empty($service_customer)) {
     insert_batch($conn, $service_customer);
 }
 
-
 function insert_batch($conn, $insert_data) {
     $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($insert_data)), ', ');
 
@@ -122,17 +118,8 @@ function insert_batch($conn, $insert_data) {
     if ($insert->execute()) {
         echo "Batch insert berhasil!";
     } else {
-        echo "Error: " . $stmt->error;
+        echo "Error: " . $query->error;
     }
-}
-
-function check_data_customer($conn, $ktp, $nama_konsumen) {
-    $query_check = "SELECT 1 FROM data_customer WHERE ktp_customer = ? AND nama_customer = ? LIMIT 1";
-    $check = $conn->prepare($query_check);
-    $check->bind_param("ss", $ktp, $nama_konsumen);
-    $check->execute();
-    $check->store_result();
-    return $check->num_rows > 0;
 }
 
 ?>

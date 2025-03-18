@@ -39,8 +39,8 @@ $query_faktur = "INSERT INTO combined_customers
     SELECT 
         f.no_ktp,
         f.nama_konsumen,
-        MAX(f.no_hp) AS no_hp,
-        MAX(f.tanggal_lahir) AS tanggal_lahir,
+        f.no_hp,
+        f.tanggal_lahir,
         COUNT(DISTINCT f.id) AS ro_sales,
         0 AS ro_service,
         MAX(f.tanggal_beli_motor) AS tanggal_terakhir_beli,
@@ -64,7 +64,7 @@ $query_service = "INSERT INTO combined_customers
     SELECT 
         hs.no_ktp,
         hs.nama_konsumen,
-        MAX(hs.no_hp) AS no_hp,
+        hs.no_hp,
         NULL AS tanggal_lahir,
         0 AS ro_sales,
         COUNT(DISTINCT hs.id) AS ro_service,
