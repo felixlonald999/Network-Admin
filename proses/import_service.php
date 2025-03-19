@@ -5,6 +5,7 @@ require("../vendor/autoload.php");
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
 
 
 // Data dealer untuk pengecekan area
@@ -27,7 +28,7 @@ while($row = mysqli_fetch_array($query)) {
 $stmt   = "SELECT * FROM `history_service`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 while($row = mysqli_fetch_array($query)) {
-    $history[$row['tanggal_service']] = [
+    $history[$row['tanggal_service']][$row['nomor_rangka']] = [
         'tanggal_service' => $row['tanggal_service'],
         'nomor_rangka' => $row['nomor_rangka'],
     ];
@@ -76,19 +77,51 @@ $errors_summary = [
 
 try {
     // Muat file Excel
-    $excel_obj = IOFactory::load($target_file);
-    $worksheet = $excel_obj->getActiveSheet();
-    $excel_row = $worksheet->getHighestRow();
+    $reader = ReaderEntityFactory::createXLSXReader();
+    $reader->open($target_file);
+    // $excel_obj = IOFactory::load($target_file);
+    // $worksheet = $excel_obj->getActiveSheet();
+    // $excel_row = $worksheet->getHighestRow();
 
     // Cek apakah file Excel memiliki header yang benar
-    if ($worksheet->getCell('C1')->getValue() !== "dealer" || $worksheet->getCell('V1')->getValue() !== "no_rangka") {
-        throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
+    //Iterasi melalui setiap sheet
+    foreach ($reader->getSheetIterator() as $sheet) {
+        //Iterasi melalui setiap baris
+        foreach ($sheet->getRowIterator() as $rowIndex => $row) {
+            //Cek baris pertama yaitu header
+            if ($rowIndex === 1) {
+                $cells = $row->getCells();
+
+                //Validasi celll C1 dan V1
+                if($cells[2]->getValue() !== "dealer" || $cells[21]->getValue() !== "no_rangka"){
+                    throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
+                }
+            } 
+        }
     }
+    // // Cek apakah file Excel memiliki header yang benar
+    // if ($worksheet->getCell('C1')->getValue() !== "dealer" || $worksheet->getCell('V1')->getValue() !== "no_rangka") {
+    //     throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
+    // }
 
     $import_service = [];
     $import_history = [];
     $batch = 1000;
 
+
+
+    foreach ($reader->getSheetIterator() as $sheet) {
+        //Iterasi melalui setiap baris
+        foreach ($sheet->getRowIterator() as $rowIndex => $row) {
+            //Mulai dari baris 3 (baris 1 dan 2 adalah header)
+            if ($rowIndex >= 3) {
+                $cells = $row->getCells();
+                
+                //Mengambil nilai dari setiap kolom
+                
+            }
+        }
+    }
     // Proses data Excel
     for ($row = 3; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
         $kode_dealer = $worksheet->getCell('C' . $row)->getValue(); // dealer
@@ -125,7 +158,7 @@ try {
                 if(in_array($tanggal_service, $duplicate_tanggal_service_history) && in_array($nomor_rangka, $duplicate_norangka_history)){ //checking in array
                     $errors_summary['same_service_date']['count']++;
                     $errors_summary['same_service_date']['rows'][] = $row;
-                } else if (check_history_service($conn, $nomor_rangka, $tanggal_service)){ //checking in database history_service
+                } else if (isset($history[$tanggal_service][$nomor_rangka])){ //checking in database history_service
                     $errors_summary['same_service_date']['count']++;
                     $errors_summary['same_service_date']['rows'][] = $row;
                 } else {
@@ -134,14 +167,20 @@ try {
                         $kilometer, $tipe_service, $tanggal_service, $sparepart
                     ];
 
+                    $history[$tanggal_service][$nomor_rangka] = [
+                        'tanggal_service' => $tanggal_service,
+                        'nomor_rangka' => $nomor_rangka
+                    ];
+
                     if (count($import_history) >= $batch) {
                         history_insert($conn, $import_history);
                         $import_history = []; // Reset array setelah insert
                     }
                 }
 
+    
                 //Check nomor rangka di service
-                $service_data = check_nomor_rangka($conn, $nomor_rangka);
+                // $service_data = check_nomor_rangka($conn, $nomor_rangka);
                 $duplicate_nomor_rangka = array_column($import_service, 3);
 
                 if (in_array($nomor_rangka, $duplicate_nomor_rangka)) { //checking in array
@@ -160,16 +199,7 @@ try {
                     $errors_summary['duplicate']['count']++;
                     $errors_summary['duplicate']['rows'][] = $row;
 
-                } else if($service_data){ //checking in database service
-                    $check_db_tgl_service = date("Y-m-d", strtotime($service_data[0]['tanggal_terakhir_service']));
-                    if($tanggal_service > $check_db_tgl_service){
-                        $query = "UPDATE `service` 
-                                    SET tanggal_terakhir_service = ?
-                                    WHERE nomor_rangka = ?";
-                        $stmt_update = $conn->prepare($query);
-                        $stmt_update->bind_param("ss", $tanggal_service, $nomor_rangka);
-                        $stmt_update->execute();
-                    }
+                } else if(isset($service[$nomor_rangka])){ //checking in database service
 
                     $errors_summary['duplicate']['count']++;
                     $errors_summary['duplicate']['rows'][] = $row;
@@ -178,6 +208,22 @@ try {
                     $import_service[] = [
                         $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor,
                         $nama_konsumen, $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service
+                    ];
+
+                    $service[$nomor_rangka] = [
+                        'kode_dealer' => $kode_dealer,
+                        'nama_dealer' => $nama_dealer,
+                        'area_dealer' => $area_dealer,
+                        'nomor_rangka' => $nomor_rangka,
+                        'nopol' => $nopol,
+                        'tipe_motor' => $tipe_motor,
+                        'nama_konsumen' => $nama_konsumen,
+                        'alamat' => $alamat,
+                        'no_hp' => $no_hp,
+                        'no_ktp' => $no_ktp,
+                        'kilometer' => $kilometer,
+                        'tipe_service' => $tipe_service,
+                        'tanggal_terakhir_service' => $tanggal_service
                     ];
                             
                     if (count($import_service) >= $batch) {
@@ -294,7 +340,20 @@ function insert_batch($conn, $import_data) {
     $sql = "INSERT INTO service (
                 kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, tipe_motor, 
                 nama_konsumen, alamat, no_hp, no_ktp, kilometer, tipe_service, tanggal_terakhir_service, created_at
-            ) VALUES $placeholders";
+            ) VALUES $placeholders
+            ON DUPLICATE KEY UPDATE 
+                tanggal_terakhir_service = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(tanggal_terakhir_service), tanggal_terakhir_service),
+                kode_dealer = VALUES(kode_dealer),
+                nama_dealer = VALUES(nama_dealer),
+                area_dealer = VALUES(area_dealer),
+                nopol = VALUES(nopol),
+                tipe_motor = VALUES(tipe_motor),
+                nama_konsumen = VALUES(nama_konsumen),
+                alamat = VALUES(alamat),
+                no_hp = VALUES(no_hp),
+                no_ktp = VALUES(no_ktp),
+                kilometer = VALUES(kilometer),
+                tipe_service = VALUES(tipe_service);";
 
     // Menyiapkan statement
     $stmt = $conn->prepare($sql);
