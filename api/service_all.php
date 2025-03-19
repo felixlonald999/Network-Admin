@@ -15,7 +15,7 @@ $ro_service = isset($_GET['ro_service']) && $_GET['ro_service'] !== '' ? urldeco
 // Bangun query
 $stmt = "SELECT 
             f.area_dealer, f.nama_dealer, f.nama_konsumen, f.no_hp, f.tipe_motor, 
-            f.tanggal_beli_motor, f.nomor_rangka,
+            f.tanggal_beli_motor, f.nomor_rangka, s.tanggal_terakhir_service,
             COUNT(hs.id) AS jumlah_service
         FROM `faktur` f 
         LEFT JOIN `service` s ON f.nomor_rangka = s.nomor_rangka 
