@@ -91,6 +91,8 @@ $errors_summary = [
     'not_main_dealer'       => ['count' => 0, 'rows' => []],
 ];
 
+dd("test");
+
 try {
     // Muat file Excel
 
@@ -99,6 +101,8 @@ try {
     $reader->setReadDataOnly(true);
     $reader->setReadFilter(new MyReadFilter());
     $excel_obj = $reader->load($target_file);
+
+    dd($excel_obj);
     // $excel_obj = IOFactory::load($target_file);
     // $end_time = microtime(true);
     // $execution_time = ($end_time - $start_time);
