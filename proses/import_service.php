@@ -5,13 +5,29 @@ require("../vendor/autoload.php");
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Box\Spout\Reader\Common\Creator\ReaderEntityFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+
+use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
+
+set_time_limit(600); // Hilangkan batas waktu
+
+class MyReadFilter implements IReadFilter {
+    public function readCell($columnAddress, int $row, ?string $worksheetName = null): bool {
+        // Contoh: Hanya membaca kolom C, G, M, N, Q, R, U, V, X, AL, AO, BJ
+        $allowedColumns = ['C', 'G', 'M', 'N', 'Q', 'R', 'U', 'V', 'X', 'AL', 'AO', 'BJ'];
+
+        if (in_array($columnAddress, $allowedColumns) && $row >= 3) {
+            return true;
+        }
+        return false;
+    }
+}
 
 
 // Data dealer untuk pengecekan area
 $stmt   = "SELECT * FROM `dealer`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
-while($row = mysqli_fetch_array($query)) {
+while ($row = mysqli_fetch_array($query)) {
     $dealer[$row['kode_yimm']] = [
         'nama_dealer' => $row['nama_dealer'],
         'area' => $row['area'],
@@ -21,13 +37,13 @@ while($row = mysqli_fetch_array($query)) {
 // Data service untuk pengecekan duplikat
 $stmt   = "SELECT * FROM `service`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
-while($row = mysqli_fetch_array($query)) {
+while ($row = mysqli_fetch_array($query)) {
     $service[$row['nomor_rangka']] = $row;
 }
 
 $stmt   = "SELECT * FROM `history_service`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
-while($row = mysqli_fetch_array($query)) {
+while ($row = mysqli_fetch_array($query)) {
     $history[$row['tanggal_service']][$row['nomor_rangka']] = [
         'tanggal_service' => $row['tanggal_service'],
         'nomor_rangka' => $row['nomor_rangka'],
@@ -50,7 +66,7 @@ $extension  = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 // Cek apakah file adalah file Excel
 if ($extension !== 'xlsx' && $extension !== 'xls') {
     $_SESSION['import_errors'][] = "Hanya file Excel (.xls atau .xlsx) yang diizinkan.";
-    
+
     header('location: ../import_service.php');
     exit;
 }
@@ -61,7 +77,7 @@ $target_file = "../library/excel.xlsx";
 if (!move_uploaded_file($_FILES["filedata"]["tmp_name"], $target_file)) {
     $_SESSION['import_errors'][] = "Gagal memindahkan file yang diunggah.";
 
-    header('location: ../import_service.php'); 
+    header('location: ../import_service.php');
     exit;
 }
 
@@ -77,51 +93,28 @@ $errors_summary = [
 
 try {
     // Muat file Excel
-    $reader = ReaderEntityFactory::createXLSXReader();
-    $reader->open($target_file);
+
+    // $start_time = microtime(true);
+    $reader = new Xlsx();
+    $reader->setReadDataOnly(true);
+    $reader->setReadFilter(new MyReadFilter());
+    $excel_obj = $reader->load($target_file);
     // $excel_obj = IOFactory::load($target_file);
-    // $worksheet = $excel_obj->getActiveSheet();
-    // $excel_row = $worksheet->getHighestRow();
-
-    // Cek apakah file Excel memiliki header yang benar
-    //Iterasi melalui setiap sheet
-    foreach ($reader->getSheetIterator() as $sheet) {
-        //Iterasi melalui setiap baris
-        foreach ($sheet->getRowIterator() as $rowIndex => $row) {
-            //Cek baris pertama yaitu header
-            if ($rowIndex === 1) {
-                $cells = $row->getCells();
-
-                //Validasi celll C1 dan V1
-                if($cells[2]->getValue() !== "dealer" || $cells[21]->getValue() !== "no_rangka"){
-                    throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
-                }
-            } 
-        }
-    }
-    // // Cek apakah file Excel memiliki header yang benar
-    // if ($worksheet->getCell('C1')->getValue() !== "dealer" || $worksheet->getCell('V1')->getValue() !== "no_rangka") {
-    //     throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
-    // }
+    // $end_time = microtime(true);
+    // $execution_time = ($end_time - $start_time);
+    
+    $worksheet = $excel_obj->getActiveSheet();
+    $excel_row = $worksheet->getHighestRow();
 
     $import_service = [];
     $import_history = [];
     $batch = 1000;
 
+    // Cek apakah file Excel memiliki header yang benar
+    // if ($worksheet->getCell('C1')->getValue() !== "dealer" || $worksheet->getCell('V1')->getValue() !== "no_rangka") {
+    //     throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
+    // }
 
-
-    foreach ($reader->getSheetIterator() as $sheet) {
-        //Iterasi melalui setiap baris
-        foreach ($sheet->getRowIterator() as $rowIndex => $row) {
-            //Mulai dari baris 3 (baris 1 dan 2 adalah header)
-            if ($rowIndex >= 3) {
-                $cells = $row->getCells();
-                
-                //Mengambil nilai dari setiap kolom
-                
-            }
-        }
-    }
     // Proses data Excel
     for ($row = 3; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
         $kode_dealer = $worksheet->getCell('C' . $row)->getValue(); // dealer
@@ -178,9 +171,8 @@ try {
                     }
                 }
 
-    
+
                 //Check nomor rangka di service
-                // $service_data = check_nomor_rangka($conn, $nomor_rangka);
                 $duplicate_nomor_rangka = array_column($import_service, 3);
 
                 if (in_array($nomor_rangka, $duplicate_nomor_rangka)) { //checking in array
@@ -225,16 +217,16 @@ try {
                         'tipe_service' => $tipe_service,
                         'tanggal_terakhir_service' => $tanggal_service
                     ];
-                            
+
                     if (count($import_service) >= $batch) {
                         insert_batch($conn, $import_service);
                         $import_service = []; // Reset array setelah insert
                     }
-            
+
                     $imported_count++;
                 }
 
-                
+
             }
         } else{
             $errors_summary['not_main_dealer']['count']++;
@@ -252,6 +244,7 @@ try {
 
     // Buat ringkasan hasil impor
     $_SESSION['import_summary']['success']  = "$imported_count data berhasil diimpor.";
+    // $_SESSION['import_errors'][] = "Waktu eksekusi: $execution_time detik";
 
     if ($errors_summary['same_service_date']['count'] > 0) {
         $_SESSION['import_summary']['same_service_date'] = "{$errors_summary['same_service_date']['count']} data tidak diimpor karena Tanggal Service di hari yang sama pada baris: " . implode(', ', $errors_summary['same_service_date']['rows']);
@@ -268,41 +261,13 @@ try {
     if ($errors_summary['not_main_dealer']['count'] > 0) {
         $_SESSION['import_summary']['not_main_dealer'] = "{$errors_summary['not_main_dealer']['count']} data tidak diimpor karena bukan Main Dealer pada baris: " . implode(', ', $errors_summary['not_main_dealer']['rows']);
     }
-} 
-catch (Exception $e) {
+} catch (Exception $e) {
     $_SESSION['import_errors'][] = $e->getMessage();
 }
 
 
-function check_nomor_rangka($conn, $nomor_rangka){
-    $query = "SELECT * FROM `service` WHERE nomor_rangka = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $nomor_rangka);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows > 0) {
-        // Mengambil semua hasil sebagai array
-        $data = [];
-        while ($row = $result->fetch_assoc()) {
-            $data[] = $row; // Menambahkan data ke dalam array
-        }
-        return $data;  // Mengembalikan semua data yang ditemukan
-    } else {
-        return null;
-    }
-}
-
-function check_history_service ($conn, $nomor_rangka, $tanggal_service){
-    $query = "SELECT * FROM `history_service` WHERE `nomor_rangka` = ? AND `tanggal_service` = ?";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("ss", $nomor_rangka, $tanggal_service);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->num_rows > 0;
-}
-
-function history_insert($conn, $import_data){
+function history_insert($conn, $import_data)
+{
     $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
 
     // Menyiapkan SQL
@@ -333,7 +298,8 @@ function history_insert($conn, $import_data){
     }
 }
 
-function insert_batch($conn, $import_data) {
+function insert_batch($conn, $import_data)
+{
     $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
 
     // Menyiapkan SQL
@@ -379,6 +345,5 @@ function insert_batch($conn, $import_data) {
 
 // echo $countt;
 
-header('location: ../import_service.php');
+header(header: 'location: ../import_service.php');
 exit;
-?>

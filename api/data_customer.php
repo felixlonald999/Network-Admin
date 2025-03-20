@@ -118,7 +118,7 @@ function insert_batch($conn, $insert_data) {
     if ($insert->execute()) {
         echo "Batch insert berhasil!";
     } else {
-        echo "Error: " . $query->error;
+        echo "Error: " . $insert->error;
     }
 }
 
