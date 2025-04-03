@@ -6,8 +6,8 @@ require("../vendor/autoload.php");
 set_time_limit(600);
 
 // Data dealer untuk pengecekan area
-$stmt   = "SELECT * FROM `dealer`";
-$query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
+$stmt_dealer   = "SELECT * FROM `dealer`";
+$query  = mysqli_query($conn, $stmt_dealer) or die(mysqli_error($conn));
 while ($row = mysqli_fetch_array($query)) {
     $dealer[$row['kode_yimm']] = [
         'nama_dealer' => $row['nama_dealer'],
@@ -16,14 +16,16 @@ while ($row = mysqli_fetch_array($query)) {
 }
 
 // Data service untuk pengecekan duplikat
-$stmt   = "SELECT * FROM `service`";
-$query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
+$stmt_service   = "SELECT * FROM `service`";
+$query  = mysqli_query($conn, $stmt_service) or die(mysqli_error($conn));
+$service = [];
 while ($row = mysqli_fetch_array($query)) {
     $service[$row['nomor_rangka']] = $row;
 }
 
-$stmt   = "SELECT * FROM `history_service`";
-$query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
+$stmt_history   = "SELECT * FROM `history_service`";
+$query  = mysqli_query($conn, $stmt_history) or die(mysqli_error($conn));
+$history = [];
 while ($row = mysqli_fetch_array($query)) {
     $history[$row['tanggal_service']][$row['nomor_rangka']] = [
         'tanggal_service' => $row['tanggal_service'],
@@ -77,13 +79,12 @@ try {
 
     $reader = new \OpenSpout\Reader\XLSX\Reader();
     $reader->open($target_file);
+    // dd($reader);
 
     $import_service = [];
     $import_history = [];
     $batch = 5000;
     $rowIndex = 0;
-
-    mysqli_begin_transaction($conn);
 
     // Cek apakah file Excel memiliki header yang benar
     //Iterasi melalui setiap sheet
@@ -91,14 +92,13 @@ try {
         //Iterasi melalui setiap baris
         foreach ($sheet->getRowIterator() as $row) {
             //Cek baris pertama yaitu header
-            $rowIndex++;
             $cells = $row->getCells();
+            $rowIndex++;
 
-            $rowStartTime = microtime(true);
             if ($rowIndex === 1) {
 
                 //Validasi celll C1 dan V1
-                if ($cells[2]->getValue() !== "dealer" || $cells[21]->getValue() !== "no_rangka") {
+                if ($cells[0]->getValue() !== "dealer" || $cells[11]->getValue() !== "walkin") {
                     throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
                 }
                 continue;
@@ -108,22 +108,22 @@ try {
             if ($rowIndex >= 3) {
 
                 //Mengambil nilai dari setiap kolom
-                $kode_dealer = $cells[2]->getValue(); // dealer
+                $kode_dealer = $cells[0]->getValue(); // dealer
 
                 if (isset($dealer[$kode_dealer])) {
                     $nama_dealer        = $dealer[$kode_dealer]['nama_dealer']; // Dealer Name
                     $area_dealer        = $dealer[$kode_dealer]['area']; // Area
-                    $nopol              = $cells[6]->getValue(); // plate
-                    $nama_konsumen      = $cells[12]->getValue(); // Customer Name
-                    $no_ktp             = $cells[13]->getValue(); // KTP No.
-                    $alamat             = $cells[16]->getValue(); // Address1
-                    $no_hp              = $cells[17]->getValue(); // Phone
-                    $tipe_motor         = $cells[20]->getValue(); // Model
-                    $nomor_rangka       = $cells[21]->getValue(); // Frame No.
-                    $kilometer          = $cells[23]->getValue(); // Kilometer
-                    $tipe_service       = $cells[37]->getValue(); // Service Type
-                    $sparepart          = $cells[40]->getValue(); // Sparepart
-                    $tanggal_service    = date("Y-m-d", strtotime($cells[61]->getValue())); // Service Date
+                    $nopol              = $cells[1]->getValue(); // plate
+                    $nama_konsumen      = $cells[2]->getValue(); // Customer Name
+                    $no_ktp             = $cells[3]->getValue(); // KTP No.
+                    $alamat             = $cells[4]->getValue(); // Address1
+                    $no_hp              = $cells[5]->getValue(); // Phone
+                    $tipe_motor         = $cells[6]->getValue(); // Model
+                    $nomor_rangka       = $cells[7]->getValue(); // Frame No.
+                    $kilometer          = $cells[8]->getValue(); // Kilometer
+                    $tipe_service       = $cells[9]->getValue(); // Service Type
+                    $sparepart          = $cells[10]->getValue(); // Sparepart
+                    $tanggal_service    = date("Y-m-d", strtotime($cells[11]->getValue())); // Service Date
 
                     // Validasi data
                     if (empty($nomor_rangka)) {
@@ -158,18 +158,16 @@ try {
                                 $tanggal_service,
                                 $sparepart
                             ];
-
+                            
+                            // dd($import_history);    
                             $history[$tanggal_service][$nomor_rangka] = [
                                 'tanggal_service' => $tanggal_service,
                                 'nomor_rangka' => $nomor_rangka
                             ];
 
                             if (count($import_history) >= $batch) {
-                                $insertStart = microtime(true);
+                                // dd(count($import_history));
                                 history_insert($conn, $import_history);
-                                $insertEnd = microtime(true);
-
-                                echo "Insert dengan history_insert () membutuhkan waktu: " . ($insertEnd - $insertStart) . " detik";
                                 $import_history = []; // Reset array setelah insert
                             }
                         }
@@ -256,9 +254,6 @@ try {
             }
         }
     }
-    // $end_time = microtime(true);
-    // $execution_time = ($end_time - $start_time);
-    // echo "Total waktu eksekusi: " . number_format($execution_time, 5) . " detik";
 
     $reader->close();
 
@@ -269,8 +264,6 @@ try {
     if (!empty($import_history)) {
         history_insert($conn, $import_history);
     }
-
-    mysqli_commit($conn);
 
     // Buat ringkasan hasil impor
     $_SESSION['import_summary']['success']  = "$imported_count data berhasil diimpor.";

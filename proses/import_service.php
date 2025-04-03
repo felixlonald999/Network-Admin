@@ -6,23 +6,36 @@ require("../vendor/autoload.php");
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
-
 use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 
-set_time_limit(600); // Hilangkan batas waktu
+set_time_limit(0); // Hilangkan batas waktu
 
 class MyReadFilter implements IReadFilter {
-    public function readCell($columnAddress, int $row, ?string $worksheetName = null): bool {
-        // Contoh: Hanya membaca kolom C, G, M, N, Q, R, U, V, X, AL, AO, BJ
-        $allowedColumns = ['C', 'G', 'M', 'N', 'Q', 'R', 'U', 'V', 'X', 'AL', 'AO', 'BJ'];
+    private array $allowedColumns = ['C', 'G', 'M', 'N', 'Q', 'R', 'U', 'V', 'X', 'AL', 'AO', 'BJ'];
 
-        if (in_array($columnAddress, $allowedColumns) && $row >= 3) {
+    public function readCell($columnAddress, int $row, ?string $worksheetName = null): bool {
+        return ($row >= 3 && in_array($columnAddress, $this->allowedColumns));
+    }
+}
+
+class ChunckReadFilter implements IReadFilter {
+    private $startRow = 0;
+    private $endRow = 0;
+
+    //list dari Row yang mau dibaca
+    public function setRows($startRow, $chunkSize) {
+        $this->startRow = $startRow;
+        $this->endRow = $startRow + $chunkSize;
+    }
+
+    public function readCell($columnAddress, int $row, ?string $worksheetName = null): bool {
+        //Hanya membaca heading dan row yang diinginkan
+        if (($row == 1) || ($row >= $this->startRow && $row < $this->endRow)) {
             return true;
         }
         return false;
     }
 }
-
 
 // Data dealer untuk pengecekan area
 $stmt   = "SELECT * FROM `dealer`";
@@ -91,18 +104,21 @@ $errors_summary = [
     'not_main_dealer'       => ['count' => 0, 'rows' => []],
 ];
 
-dd("test");
-
 try {
     // Muat file Excel
 
     // $start_time = microtime(true);
-    $reader = new Xlsx();
+    $reader = IOFactory::createReader('Xlsx');
+
+    // $chunkSize = 1000;
+    // $chunkFilter = new ChunckReadFilter();
+
     $reader->setReadDataOnly(true);
-    $reader->setReadFilter(new MyReadFilter());
+    // $reader->setReadFilter(new MyReadFilter());
+    // $reader->setReadFilter($chunkFilter);
     $excel_obj = $reader->load($target_file);
 
-    dd($excel_obj);
+    // dd($excel_obj);
     // $excel_obj = IOFactory::load($target_file);
     // $end_time = microtime(true);
     // $execution_time = ($end_time - $start_time);
@@ -112,15 +128,19 @@ try {
 
     $import_service = [];
     $import_history = [];
-    $batch = 1000;
+    $batch = 3000;
 
     // Cek apakah file Excel memiliki header yang benar
-    // if ($worksheet->getCell('C1')->getValue() !== "dealer" || $worksheet->getCell('V1')->getValue() !== "no_rangka") {
-    //     throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
-    // }
+    if ($worksheet->getCell('C1')->getValue() !== "dealer" || $worksheet->getCell('V1')->getValue() !== "no_rangka") {
+        throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
+    }
 
     // Proses data Excel
     for ($row = 3; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
+        // $chunkFilter->setRows($row, $chunkSize);
+        // $excel_obj = $reader->load($target_file);
+        // $worksheet = $excel_obj->getActiveSheet();
+        
         $kode_dealer = $worksheet->getCell('C' . $row)->getValue(); // dealer
 
         if(isset($dealer[$kode_dealer])){
@@ -142,11 +162,11 @@ try {
             if (empty($nomor_rangka)) {
                 $errors_summary['empty_nomor_rangka']['count']++;
                 $errors_summary['empty_nomor_rangka']['rows'][] = $row;
-            } 
+            }
             else if(strlen(str_replace(' ', '', $no_hp)) < 11 || strlen(str_replace(' ', '', $no_hp)) > 14){
                 $errors_summary['no_hp_invalid']['count']++;
                 $errors_summary['no_hp_invalid']['rows'][] = $row;
-            } 
+            }
             else{
                 //Checking in history_service
                 $duplicate_norangka_history = array_column($import_history, 3);
@@ -173,6 +193,8 @@ try {
                         history_insert($conn, $import_history);
                         $import_history = []; // Reset array setelah insert
                     }
+
+                    $imported_history++;
                 }
 
 
@@ -247,7 +269,7 @@ try {
     }
 
     // Buat ringkasan hasil impor
-    $_SESSION['import_summary']['success']  = "$imported_count data berhasil diimpor.";
+    $_SESSION['import_summary']['success'][]  = "$imported_count data service berhasil diimpor.";
     // $_SESSION['import_errors'][] = "Waktu eksekusi: $execution_time detik";
 
     if ($errors_summary['same_service_date']['count'] > 0) {
@@ -270,15 +292,15 @@ try {
 }
 
 
-function history_insert($conn, $import_data)
-{
+function history_insert($conn, $import_data){
+    $conn->query("ALTER TABLE history_service DISABLE KEYS;");
     $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
 
     // Menyiapkan SQL
     $sql = "INSERT INTO history_service (
                 kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, nama_konsumen, 
                 no_hp, no_ktp, kilometer, tipe_service, tanggal_service, sparepart, created_at
-            ) VALUES $placeholders";
+            ) VALUES $placeholders;";
 
     // Menyiapkan statement
     $stmt = $conn->prepare($sql);
@@ -297,13 +319,13 @@ function history_insert($conn, $import_data)
 
     if ($stmt->execute()) {
         echo "Batch insert berhasil!";
+        $conn->query("ALTER TABLE history_service ENABLE KEYS;");
     } else {
         echo "Error: " . $stmt->error;
     }
 }
 
-function insert_batch($conn, $import_data)
-{
+function insert_batch($conn, $import_data){
     $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
 
     // Menyiapkan SQL
@@ -347,7 +369,7 @@ function insert_batch($conn, $import_data)
     }
 }
 
-// echo $countt;
-
 header(header: 'location: ../import_service.php');
 exit;
+
+?>
