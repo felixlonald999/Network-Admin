@@ -94,7 +94,9 @@ $conn->autocommit(FALSE); // Matikan autocommit
 for ($i = 0; $i < $batches; $i++) {
     $offset = $i * $batch_size;
     
-    $insert_query = "INSERT IGNORE INTO data_customer
+    // Ambil data dari temporary table dan masukkan ke data_customer
+    // Menggunakan ON DUPLICATE KEY UPDATE untuk menghindari duplikasi dan memperbarui data yang ada
+    $insert_query = "INSERT INTO data_customer
         (ktp_customer, nama_customer, nohp1_customer, tanggal_lahir, 
          ro_sales, ro_service, tanggal_terakhir_beli_motor, 
          tanggal_terakhir_service, area_dealer, id_faktur_terakhir, created_at)
@@ -111,7 +113,16 @@ for ($i = 0; $i < $batches; $i++) {
             id_faktur_terakhir,
             NOW()
         FROM combined_customers
-        LIMIT $batch_size OFFSET $offset";
+        LIMIT $batch_size OFFSET $offset
+        ON DUPLICATE KEY UPDATE
+            nohp1_customer = VALUES(nohp1_customer),
+            tanggal_lahir = VALUES(tanggal_lahir),
+            ro_sales = VALUES(ro_sales),
+            ro_service = VALUES(ro_service),
+            tanggal_terakhir_beli_motor = VALUES(tanggal_terakhir_beli_motor),
+            tanggal_terakhir_service = VALUES(tanggal_terakhir_service),
+            area_dealer = VALUES(area_dealer),
+            id_faktur_terakhir = VALUES(id_faktur_terakhir);";
     
     $conn->query($insert_query);
     
