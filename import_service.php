@@ -25,7 +25,7 @@ if(!isset($_SESSION['auth'])){
                         <div class="card">
                             <div class="card-body">
                                 <h2>Import Data Service</h2>
-                                <form action="proses/import_service.php" method="POST" enctype="multipart/form-data">
+                                <form action="proses/import_service_pangkas.php" method="POST" enctype="multipart/form-data">
                                     <div class="input-group">
                                         <input type="file" class="form-control" name="filedata">
                                         <span class="input-group-append">
