@@ -10,33 +10,6 @@ use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 
 set_time_limit(0); // Hilangkan batas waktu
 
-class MyReadFilter implements IReadFilter {
-    private array $allowedColumns = ['C', 'G', 'M', 'N', 'Q', 'R', 'U', 'V', 'X', 'AL', 'AO', 'BJ'];
-
-    public function readCell($columnAddress, int $row, ?string $worksheetName = null): bool {
-        return ($row >= 3 && in_array($columnAddress, $this->allowedColumns));
-    }
-}
-
-class ChunckReadFilter implements IReadFilter {
-    private $startRow = 0;
-    private $endRow = 0;
-
-    //list dari Row yang mau dibaca
-    public function setRows($startRow, $chunkSize) {
-        $this->startRow = $startRow;
-        $this->endRow = $startRow + $chunkSize;
-    }
-
-    public function readCell($columnAddress, int $row, ?string $worksheetName = null): bool {
-        //Hanya membaca heading dan row yang diinginkan
-        if (($row == 1) || ($row >= $this->startRow && $row < $this->endRow)) {
-            return true;
-        }
-        return false;
-    }
-}
-
 // Data dealer untuk pengecekan area
 $stmt   = "SELECT * FROM `dealer`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
@@ -106,18 +79,9 @@ $errors_summary = [
 
 try {
     // Muat file Excel
-
-    // $start_time = microtime(true);
     $reader = IOFactory::createReader('Xlsx');
-
-    // $chunkSize = 1000;
-    // $chunkFilter = new ChunckReadFilter();
-
     $reader->setReadDataOnly(true);
-    // $reader->setReadFilter(new MyReadFilter());
-    // $reader->setReadFilter($chunkFilter);
     $excel_obj = $reader->load($target_file);
-    dd($excel_obj);
     
     $worksheet = $excel_obj->getActiveSheet();
     $excel_row = $worksheet->getHighestRow();
@@ -130,13 +94,8 @@ try {
         throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
     }
 
-
     // Proses data Excel
     for ($row = 3; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
-        // $chunkFilter->setRows($row, $chunkSize);
-        // $excel_obj = $reader->load($target_file);
-        // $worksheet = $excel_obj->getActiveSheet();
-        
         $kode_dealer = $worksheet->getCell('A' . $row)->getValue(); // dealer
 
         if(isset($dealer[$kode_dealer])){
@@ -192,7 +151,6 @@ try {
 
                     $imported_history++;
                 }
-
 
                 //Check nomor rangka di service
                 $duplicate_nomor_rangka = array_column($import_service, 3);
@@ -265,7 +223,7 @@ try {
     }
 
     // Buat ringkasan hasil impor
-    $_SESSION['import_summary']['success'][]  = "$imported_count data service berhasil diimpor.";
+    $_SESSION['import_summary']['success']  = "$imported_count data service berhasil diimpor.";
     // $_SESSION['import_errors'][] = "Waktu eksekusi: $execution_time detik";
 
     if ($errors_summary['same_service_date']['count'] > 0) {

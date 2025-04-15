@@ -41,8 +41,8 @@ if(!isset($_SESSION['auth'])){
                     <div class="card-body">
                         <h2>Rule Import Excel Service</h2>
                         <ul>
-                            <li>Data yang bisa diimport berasal dari <strong>faktur DPACK</strong></li>
-                            <li>Format faktur yang diimport <strong>harus sesuai</strong> dengan template yang diberikan</li>
+                            <li>Data yang bisa diimport berasal dari <strong>service DPACK</strong></li>
+                            <li>Format service yang diimport <strong>harus sesuai</strong> dengan template yang diberikan</li>
                             <li>Format data yang dapat diproses hanya <strong>.xls atau .xlsx</strong></li>
                         </ul>
                         <hr>
