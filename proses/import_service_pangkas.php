@@ -95,7 +95,7 @@ try {
     }
 
     // Proses data Excel
-    for ($row = 3; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
+    for ($row = 2; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
         $kode_dealer = $worksheet->getCell('A' . $row)->getValue(); // dealer
 
         if(isset($dealer[$kode_dealer])){
