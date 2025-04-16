@@ -90,6 +90,7 @@ try {
 
     $import_service = [];
     $import_history = [];
+    $duplicate_pairs = [];
     $batch = 3000;
 
     if ($worksheet->getCell('A1')->getValue() !== "dealer" || $worksheet->getCell('L1')->getValue() !== "walkin") {
@@ -130,10 +131,9 @@ try {
             $errors_summary['no_hp_invalid']['rows'][] = $row;
         } else {
             //Checking in history_service
-            $duplicate_norangka_history = array_column($import_history, 3);
-            $duplicate_tanggal_service_history = array_column($import_history, 10);
+            $key = $tanggal_service . '|' . $nomor_rangka;
 
-            if (in_array($tanggal_service, $duplicate_tanggal_service_history) && in_array($nomor_rangka, $duplicate_norangka_history)) { //checking in array
+            if (in_array($key, $duplicate_pairs)) { //checking in array
                 $errors_summary['same_service_date']['count']++;
                 $errors_summary['same_service_date']['rows'][] = $row;
             } else if (isset($history[$tanggal_service][$nomor_rangka])) { //check in database history_service
@@ -160,8 +160,11 @@ try {
                     'nomor_rangka' => $nomor_rangka
                 ];
 
+                $duplicate_pairs[] = $key; // Simpan pasangan tanggal_service dan nomor_rangka yang sudah diproses
+
                 if (count($import_history) >= $batch) {
                     history_insert($conn, $import_history);
+                    $duplicate_pairs = [];
                     $import_history = []; // Reset array setelah insert
                 }
 
