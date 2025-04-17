@@ -78,6 +78,8 @@ if ($ro_service !== null) {
     }
 }
 
+$stmt .= " LIMIT 300";
+
 // Eksekusi query
 $query = $conn->prepare($stmt);
 $query->bind_param($types, ...$params);
