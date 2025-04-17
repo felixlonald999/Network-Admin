@@ -2,7 +2,7 @@
 require("autoload.php");
 
 set_time_limit(0); // Hilangkan batas waktu
-ini_set('memory_limit', '1024M'); // Tingkatkan memori
+ini_set('memory_limit', '3072M'); // Tingkatkan memori
 
 // 1. Tambahkan unique index jika belum ada
 // $conn->query("ALTER TABLE data_customer ADD UNIQUE INDEX idx_unique_customer (ktp_customer, nama_customer)");

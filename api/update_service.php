@@ -1,6 +1,7 @@
 <?php
 require("autoload.php");
 
+ini_set('memory_limit', '4096M');
 $stmt = "UPDATE `service` AS s
     JOIN `faktur` AS f 
     ON s.nomor_rangka = f.nomor_rangka
