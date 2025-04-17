@@ -10,6 +10,7 @@ use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 set_time_limit(0); // Hilangkan batas waktu
+ini_set('memory_limit', '4096M'); //set memory limit to 4GB
 
 // Data dealer untuk pengecekan area
 $stmt   = "SELECT * FROM `dealer`";
@@ -25,7 +26,10 @@ while ($row = mysqli_fetch_assoc($query)) {
 $stmt   = "SELECT * FROM `service`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 while ($row = mysqli_fetch_assoc($query)) {
-    $service[trim($row['nomor_rangka'])] = $row;
+    $service[trim($row['nomor_rangka'])] = [
+        'nomor_rangka' => trim($row['nomor_rangka']),
+        'tanggal_terakhir_service' => $row['tanggal_terakhir_service'],
+    ];
 }
 
 $stmt   = "SELECT * FROM `history_service`";
@@ -93,7 +97,7 @@ try {
     $duplicate_pairs = [];
     $batch = 3000;
 
-    if ($worksheet->getCell('A1')->getValue() !== "dealer" || $worksheet->getCell('L1')->getValue() !== "walkin") {
+    if ($worksheet->getCell('A1')->getValue() !== "dealer" || $worksheet->getCell('L1')->getValue() !== "part_name") {
         throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
     }
 
@@ -102,17 +106,17 @@ try {
         $kode_dealer = $worksheet->getCell('A' . $row)->getValue(); // dealer
         $nama_dealer        = $dealer[$kode_dealer]['nama_dealer'] ?? '-'; // Dealer Name
         $area_dealer        = $dealer[$kode_dealer]['area'] ?? '-'; // Area
-        $nopol              = $worksheet->getCell('B' . $row)->getValue(); // plate
-        $nama_konsumen      = trim($worksheet->getCell('C' . $row)->getValue()); // Customer Name
-        $no_ktp             = trim($worksheet->getCell('D' . $row)->getValue()); // KTP No.
-        $alamat             = $worksheet->getCell('E' . $row)->getValue() ?? '-'; // Address1
-        $no_hp              = $worksheet->getCell('F' . $row)->getValue(); // Phone
-        $tipe_motor         = $worksheet->getCell('G' . $row)->getValue() ?? '-'; // Model
-        $nomor_rangka       = trim($worksheet->getCell('H' . $row)->getValue()); // Frame No.
-        $kilometer          = $worksheet->getCell('I' . $row)->getValue() ?? '0'; // Kilometer
-        $tipe_service       = $worksheet->getCell('J' . $row)->getValue() ?? '-'; // Service Type
-        $sparepart          = $worksheet->getCell('K' . $row)->getValue() ?? '-'; // Sparepart
-        $tanggal_service    = $worksheet->getCell('L' . $row)->getValue(); // Service Date
+        $tanggal_service    = $worksheet->getCell('B' . $row)->getValue(); // Service Date
+        $nopol              = $worksheet->getCell('C' . $row)->getValue(); // plate
+        $nama_konsumen      = trim($worksheet->getCell('D' . $row)->getValue()); // Customer Name
+        $no_ktp             = trim($worksheet->getCell('E' . $row)->getValue()); // KTP No.
+        $alamat             = $worksheet->getCell('F' . $row)->getValue() ?? '-'; // Address1
+        $no_hp              = $worksheet->getCell('G' . $row)->getValue(); // Phone
+        $tipe_motor         = $worksheet->getCell('H' . $row)->getValue() ?? '-'; // Model
+        $nomor_rangka       = trim($worksheet->getCell('I' . $row)->getValue()); // Frame No.
+        $kilometer          = $worksheet->getCell('J' . $row)->getValue() ?? '0'; // Kilometer
+        $tipe_service       = $worksheet->getCell('K' . $row)->getValue() ?? '-'; // Service Type
+        $sparepart          = $worksheet->getCell('L' . $row)->getValue() ?? '-'; // Sparepart
 
         // Validasi data tanggal service
         if (is_numeric($tanggal_service)) {
@@ -221,18 +225,7 @@ try {
                     ];
 
                     $service[$nomor_rangka] = [
-                        'kode_dealer' => $kode_dealer,
-                        'nama_dealer' => $nama_dealer,
-                        'area_dealer' => $area_dealer,
                         'nomor_rangka' => $nomor_rangka,
-                        'nopol' => $nopol,
-                        'tipe_motor' => $tipe_motor,
-                        'nama_konsumen' => $nama_konsumen,
-                        'alamat' => $alamat,
-                        'no_hp' => $no_hp,
-                        'no_ktp' => $no_ktp,
-                        'kilometer' => $kilometer,
-                        'tipe_service' => $tipe_service,
                         'tanggal_terakhir_service' => $tanggal_service
                     ];
                     if (count($import_service) >= $batch) {
@@ -259,21 +252,9 @@ try {
                     $tipe_service,
                     $tanggal_service
                 ];
-                // dd($import_service);
 
                 $service[$nomor_rangka] = [
-                    'kode_dealer' => $kode_dealer,
-                    'nama_dealer' => $nama_dealer,
-                    'area_dealer' => $area_dealer,
                     'nomor_rangka' => $nomor_rangka,
-                    'nopol' => $nopol,
-                    'tipe_motor' => $tipe_motor,
-                    'nama_konsumen' => $nama_konsumen,
-                    'alamat' => $alamat,
-                    'no_hp' => $no_hp,
-                    'no_ktp' => $no_ktp,
-                    'kilometer' => $kilometer,
-                    'tipe_service' => $tipe_service,
                     'tanggal_terakhir_service' => $tanggal_service
                 ];
 

@@ -118,7 +118,6 @@ try {
     // $reader->setReadFilter($chunkFilter);
     $excel_obj = $reader->load($target_file);
 
-    // dd($excel_obj);
     // $excel_obj = IOFactory::load($target_file);
     // $end_time = microtime(true);
     // $execution_time = ($end_time - $start_time);
@@ -136,7 +135,7 @@ try {
     }
 
     // Proses data Excel
-    for ($row = 3; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
+    for ($row = 2; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
         // $chunkFilter->setRows($row, $chunkSize);
         // $excel_obj = $reader->load($target_file);
         // $worksheet = $excel_obj->getActiveSheet();
@@ -156,7 +155,7 @@ try {
             $kilometer          = $worksheet->getCell('X' . $row)->getValue(); // Kilometer
             $tipe_service       = $worksheet->getCell('AL' . $row)->getValue(); // Service Type
             $sparepart          = $worksheet->getCell('AO' . $row)->getValue(); // Sparepart
-            $tanggal_service    = date("Y-m-d", strtotime($worksheet->getCell('BJ' . $row)->getValue())); // Service Date
+            $tanggal_service    = date("Y-m-d", strtotime($worksheet->getCell('E' . $row)->getValue())); // Service Date
 
             // Validasi data
             if (empty($nomor_rangka)) {
