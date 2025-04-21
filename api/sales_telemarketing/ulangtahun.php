@@ -26,6 +26,7 @@ $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;   // Default mulai
 $query = "SELECT *
           FROM `data_customer` dc 
           where dc.tanggal_lahir IS NOT NULL
+            AND MONTH(dc.tanggal_lahir) = MONTH(CURDATE())
           ORDER BY dc.ro_sales DESC, dc. ro_service DESC
           LIMIT ? OFFSET ?";
 
