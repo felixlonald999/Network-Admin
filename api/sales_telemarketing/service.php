@@ -21,7 +21,7 @@ if ($conn->connect_error) {
 // Ambil parameter pagination
 $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 10000;  // Default 1000 row per request
 $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;   // Default mulai dari awal
-
+$area = isset($_GET['area']) ? $_GET['area'] : ''; // Default area dealer
 // Query untuk mengambil data
 // $query = "SELECT 
 //             s.nomor_rangka, s.tanggal_terakhir_service,
@@ -39,14 +39,14 @@ $query = "SELECT
         FROM `faktur` f 
         LEFT JOIN `service` s ON f.nomor_rangka = s.nomor_rangka 
         LEFT JOIN `history_service` hs ON f.nomor_rangka = hs.nomor_rangka
-        where s.tanggal_terakhir_service <= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+        where s.tanggal_terakhir_service <= DATE_SUB(CURDATE(), INTERVAL 3 MONTH) and f.area_dealer = ?
         GROUP BY f.nomor_rangka
         ORDER BY jumlah_service DESC
         LIMIT ? OFFSET ?";
 
 
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $limit, $offset);
+$stmt->bind_param("sii",$area, $limit, $offset);
 $stmt->execute();
 $res = $stmt->get_result();
 $data = $res->fetch_all(MYSQLI_ASSOC);
