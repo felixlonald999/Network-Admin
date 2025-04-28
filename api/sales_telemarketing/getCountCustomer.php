@@ -22,7 +22,8 @@ if ($conn->connect_error) {
 // Query untuk mengambil data
 $query = "SELECT count(id) as jumlah, 
             COUNT(CASE WHEN tanggal_lahir IS NOT NULL AND tanggal_lahir != '' THEN 1 END) AS jumlah_ultah,
-            COUNT(CASE WHEN id_faktur_terakhir IS NOT NULL AND id_faktur_terakhir != '' THEN 1 END) AS jumlah_service
+            COUNT(CASE WHEN id_faktur_terakhir IS NOT NULL AND id_faktur_terakhir != '' THEN 1 END) AS jumlah_service,
+            (SELECT COUNT(*) FROM `faktur`) AS jumlah_faktur
           FROM `data_customer` 
            ";
 
