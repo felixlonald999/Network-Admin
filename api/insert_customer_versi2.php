@@ -45,8 +45,8 @@ $query_faktur = "INSERT INTO combined_customers
         0 AS ro_service,
         MAX(f.tanggal_beli_motor) AS tanggal_terakhir_beli,
         NULL AS tanggal_terakhir_service,
-        MAX(f.area_dealer) AS area_dealer,
-        MAX(f.id) AS id_faktur_terakhir
+        area_dealer,
+        f.id AS id_faktur_terakhir
     FROM faktur f
     GROUP BY f.no_ktp, f.nama_konsumen
     ON DUPLICATE KEY UPDATE

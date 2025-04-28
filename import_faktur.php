@@ -60,15 +60,17 @@ if(!isset($_SESSION['auth'])){
                     <div class="card-body">
                         <h2>Result Import: </h2>
                         <ul id="result-import">
-                            <?php if(!empty($_SESSION['import_errors'])): ?>
+                        <?php if (!empty($_SESSION['import_errors'])): ?>
                                 <?php foreach ($_SESSION['import_errors'] as $error): ?>
                                     <li class="text-danger"><?= $error ?></li>
                                 <?php endforeach ?>
 
                                 <?php unset($_SESSION['import_errors']); ?>
-                            <?php elseif(!empty($_SESSION['import_summary'])): ?>
+                            <?php elseif (!empty($_SESSION['import_summary'])): ?>
                                 <?php foreach ($_SESSION['import_summary'] as $key => $summary): ?>
-                                    <li class="text-<?= $key == "success" ? "success" : "danger" ?>"><?= $summary ?></li>
+                                    <?php foreach ($summary as $message): ?>
+                                        <li class="text-<?= $key == "success" ? "success" : "danger" ?>"><?= $message ?></li>
+                                    <?php endforeach ?>
                                 <?php endforeach ?>
 
                                 <?php unset($_SESSION['import_summary']); ?>

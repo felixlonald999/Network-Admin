@@ -103,18 +103,18 @@ try {
 
     // Proses data Excel
     for ($row = 2; $row <= $excel_row; $row++) { // Mulai dari baris 3 (baris pertama adalah header)
-        $kode_dealer = $worksheet->getCell('A' . $row)->getValue(); // dealer
+        $kode_dealer        = $worksheet->getCell('A' . $row)->getValue(); // dealer
         $nama_dealer        = $dealer[$kode_dealer]['nama_dealer'] ?? '-'; // Dealer Name
         $area_dealer        = $dealer[$kode_dealer]['area'] ?? '-'; // Area
-        $tanggal_service    = $worksheet->getCell('B' . $row)->getValue(); // Service Date
+        $tanggal_service    = $worksheet->getCell('B' . $row)->getValue(); // Date
         $nopol              = $worksheet->getCell('C' . $row)->getValue(); // plate
-        $nama_konsumen      = trim($worksheet->getCell('D' . $row)->getValue()); // Customer Name
-        $no_ktp             = trim($worksheet->getCell('E' . $row)->getValue()); // KTP No.
-        $alamat             = $worksheet->getCell('F' . $row)->getValue() ?? '-'; // Address1
-        $no_hp              = $worksheet->getCell('G' . $row)->getValue(); // Phone
-        $tipe_motor         = $worksheet->getCell('H' . $row)->getValue() ?? '-'; // Model
-        $nomor_rangka       = trim($worksheet->getCell('I' . $row)->getValue()); // Frame No.
-        $kilometer          = $worksheet->getCell('J' . $row)->getValue() ?? '0'; // Kilometer
+        $nama_konsumen      = trim($worksheet->getCell('D' . $row)->getValue()); // nama
+        $no_ktp             = trim($worksheet->getCell('E' . $row)->getValue()); // ktp
+        $alamat             = $worksheet->getCell('F' . $row)->getValue() ?? '-'; // Address
+        $no_hp              = $worksheet->getCell('G' . $row)->getValue(); // telpon
+        $tipe_motor         = $worksheet->getCell('H' . $row)->getValue() ?? '-'; // model_name
+        $nomor_rangka       = trim($worksheet->getCell('I' . $row)->getValue()); // no_rangka
+        $kilometer          = $worksheet->getCell('J' . $row)->getValue() ?? '0'; // milage
         $tipe_service       = $worksheet->getCell('K' . $row)->getValue() ?? '-'; // Service Type
         $sparepart          = $worksheet->getCell('L' . $row)->getValue() ?? '-'; // Sparepart
 

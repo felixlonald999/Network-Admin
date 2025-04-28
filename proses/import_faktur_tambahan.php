@@ -15,7 +15,7 @@ while($row = mysqli_fetch_array($query)) {
 }
 
 // Data faktur untuk pengecekan duplikat
-$stmt   = "SELECT * FROM `faktur`";
+$stmt   = "SELECT * FROM `faktur_temporary`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 while($row = mysqli_fetch_array($query)) {
     $faktur[$row['nomor_rangka']] = $row['nomor_rangka'];
@@ -78,22 +78,12 @@ try {
         $kode_dealer = $worksheet->getCell('B' . $row)->getValue(); // Dealer Code
 
         if(isset($dealer[$kode_dealer])){
-            $nama_dealer        = $worksheet->getCell('C' . $row)->getValue(); // Dealer Name
-            $area_dealer        = $dealer[$kode_dealer]; // Area
-            $tipe_motor         = $worksheet->getCell('F' . $row)->getValue(); // Model
             $nomor_rangka       = $worksheet->getCell('G' . $row)->getValue(); // Frame No.
-            $warna_motor        = $worksheet->getCell('I' . $row)->getValue(); // Faktur Color
-            $nama_konsumen      = $worksheet->getCell('P' . $row)->getValue(); // Customer Name
-            $alamat             = $worksheet->getCell('Q' . $row)->getValue(); // Address1
             $kabupaten          = $worksheet->getCell('T' . $row)->getValue(); // City
             $pekerjaan          = $worksheet->getCell('U' . $row)->getValue(); // Occupation
-            $tanggal_lahir      = date("Y-m-d", strtotime($worksheet->getCell('X' . $row)->getValue())); // Birth Date
             $no_hp              = $worksheet->getCell('Y' . $row)->getValue(); // Phone
             $pendidikan         = $worksheet->getCell('Z' . $row)->getValue(); // Education
-            $no_ktp             = $worksheet->getCell('AM' . $row)->getValue(); // KTP No.
-            $tipe_pembelian     = $worksheet->getCell('AB' . $row)->getValue(); // Type of Purchase
             $tenor_kredit       = $worksheet->getCell('AF' . $row)->getValue() ?? '-'; // Term Payment
-            $tanggal_beli_motor = date("Y-m-d", strtotime($worksheet->getCell('AG' . $row)->getValue())); // Purchase Date
 
             // Validasi data
             if (empty($nomor_rangka)) {
@@ -110,9 +100,7 @@ try {
             }
             else{
                 $import_data[] = [
-                    $kode_dealer, $nama_dealer, $area_dealer, $tipe_motor, $warna_motor, $nomor_rangka,
-                    $nama_konsumen, $alamat, $kabupaten, $pekerjaan, $tanggal_lahir, $no_hp, $pendidikan, 
-                    $no_ktp, $tipe_pembelian, $tenor_kredit, $tanggal_beli_motor
+                    $nomor_rangka, $kabupaten, $pekerjaan, $no_hp, $pendidikan, $tenor_kredit
                 ];
 
                 $imported_count++;
@@ -126,12 +114,10 @@ try {
 
     if (!empty($import_data)) {
         // Buat placeholder (?,?,?,...) untuk setiap data yang diimport
-        $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
+        $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?), ', count($import_data)), ', ');
         
-        $sql = "INSERT INTO faktur (
-                    kode_dealer, nama_dealer, area_dealer, tipe_motor, warna_motor, nomor_rangka,
-                    nama_konsumen, alamat, kabupaten, pekerjaan, tanggal_lahir, no_hp, pendidikan, 
-                    no_ktp, tipe_pembelian, tenor_kredit, tanggal_beli_motor, created_at
+        $sql = "INSERT INTO faktur_temporary (
+                    nomor_rangka, kabupaten, pekerjaan, no_hp, pendidikan, tenor_kredit
                 ) VALUES $placeholders";
     
         $stmt = $conn->prepare($sql);
@@ -145,7 +131,7 @@ try {
         }
     
         // Buat format tipe data untuk bind_param (misalnya "ssssssssssss")
-        $types = str_repeat('s', 17 * count($import_data)); // Semua dianggap string ('s')
+        $types = str_repeat('s', 6 * count($import_data)); // Semua dianggap string ('s')
     
         // Gunakan call_user_func_array untuk bind_param
         $stmt->bind_param($types, ...$values);
