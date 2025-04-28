@@ -21,6 +21,9 @@
                 <a class="nav-link" href="query.php">Query</a>
             </li>
             <li class="nav-item active">
+                <a class="nav-link" href="cari_motor.php">Cari Motor</a>
+            </li>
+            <li class="nav-item active">
                 <a class="nav-link" href="cron.php">CRON</a>
             </li>
         </ul>
