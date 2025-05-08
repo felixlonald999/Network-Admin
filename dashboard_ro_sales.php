@@ -115,8 +115,7 @@ $areas = array(
     "NTB" => "NTB",
     "KALIMANTAN TIMUR" => "KALIMANTAN TIMUR",
     "KALIMANTAN TENGAH SELATAN" => "KALIMANTAN TENGAH SELATAN",
-
-)
+);
 
 ?>
 <!DOCTYPE html>
@@ -192,13 +191,36 @@ $areas = array(
         .form-label {
             font-weight: 500;
         }
+        /* Style untuk area summary */
+        .area-summary-card {
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .area-summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .area-summary-header {
+            background-color: #0d6efd;
+            color: white;
+            padding: 12px 15px;
+        }
+        .area-count {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        .progress-bar-area {
+            height: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row mt-5 page-header">
             <div class="col-12 text-center">
-                <h1>Cari Riwayat Pembelian Motor</h1>
+                <h1>Dashboard RO Sales per Tipe</h1>
                 <p class="lead">Temukan data ringkasan riwayat pembelian motor dari pelanggan</p>
             </div>
         </div>
@@ -227,10 +249,8 @@ $areas = array(
                                 <div class="col-md-12">
                                     <label for="area_dealer" class="form-label">Pilih Area Dealer:</label>
                                     <select name="area_dealer" id="area_dealer" class="form-select">
-                                        <option value="">- Semua Area -</option>
-                                        
-                                        <?php foreach($areas as $area): ?>
-                                            <option value="<?php echo $area; ?>" <?php echo (isset($_POST['area_dealer']) && $_POST['area_dealer'] == $area) ? 'selected' : ''; ?>><?php echo $area; ?></option>
+                                        <?php foreach($areas as $key => $area): ?>
+                                            <option value="<?php echo $key; ?>" <?php echo (isset($_POST['area_dealer']) && $_POST['area_dealer'] == $key) ? 'selected' : ''; ?>><?php echo $area; ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -340,6 +360,7 @@ $areas = array(
                         ROW_NUMBER() OVER (PARTITION BY id_customer ORDER BY tanggal_beli_motor DESC) AS rn,
                         COUNT(*) OVER (PARTITION BY id_customer) AS total_motors
                     FROM data_motor
+                    where id_customer IS NOT NULL
                 )
                 SELECT 
                     latest.id_customer,
@@ -371,6 +392,7 @@ $areas = array(
                     $first_time_buyers = 0;
                     $customer_count = 0;
                     $unique_customers = array();
+                    $area_counts = array(); // Array untuk menghitung jumlah motor per area
 
                     // Menghitung jumlah pelanggan unik dan mengumpulkan data motor sebelumnya
                     while($row = $result->fetch_assoc()) {
@@ -381,6 +403,14 @@ $areas = array(
                             // Cek jika ini pembelian pertama (jumlah_motor = 1)
                             if (isset($row['jumlah_motor']) && $row['jumlah_motor'] == 1) {
                                 $first_time_buyers++;
+                            }
+                            
+                            // Menghitung jumlah motor per area
+                            $area = $row['area_dealer'];
+                            if (!isset($area_counts[$area])) {
+                                $area_counts[$area] = 1;
+                            } else {
+                                $area_counts[$area]++;
                             }
                         }
                         
@@ -445,8 +475,64 @@ $areas = array(
                                 </div>
                             </div>
                           </div>';
+
+                    // Menampilkan ringkasan per area
+                    echo '<div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card mb-4">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5><i class="fas fa-map-marked-alt me-2"></i>Ringkasan Penjualan Per Area</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">';
                     
-                    // Menampilkan ringkasan data
+                    // Menghitung total motor untuk persentase
+                    $total_motors = array_sum($area_counts);
+                    
+                    // Sort area_counts secara descending berdasarkan jumlah
+                    arsort($area_counts);
+                    
+                    // Loop untuk setiap area
+                    foreach($area_counts as $area => $count) {
+                        $percentage = round(($count / $total_motors) * 100, 1);
+                        
+                        // Color coding
+                        $area_bg_color = 'bg-primary';
+                        if ($percentage > 25) {
+                            $area_bg_color = 'bg-success';
+                        } else if ($percentage > 15) {
+                            $area_bg_color = 'bg-info';
+                        } else if ($percentage < 5) {
+                            $area_bg_color = 'bg-secondary';
+                        }
+                        
+                        echo '<div class="col-md-4 mb-3">
+                                <div class="card area-summary-card">
+                                    <div class="card-header area-summary-header '.$area_bg_color.'">
+                                        <h5 class="mb-0">'.htmlspecialchars($area).'</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span><i class="fas fa-motorcycle me-2"></i><strong>'.$count.'</strong> unit</span>
+                                            <span class="badge '.$area_bg_color.'">'.$percentage.'%</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar '.$area_bg_color.' progress-bar-area" role="progressbar" 
+                                                 style="width: '.$percentage.'%" 
+                                                 aria-valuenow="'.$percentage.'" aria-valuemin="0" 
+                                                 aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                              </div>';
+                    }
+                    
+                    echo '</div>
+                        </div>
+                    </div>
+                </div>';
+                    
+                    // Menampilkan ringkasan data riwayat pembelian
                     echo '<div class="row mt-4">
                             <div class="col-12">
                                 <div class="card mb-4">
@@ -479,7 +565,7 @@ $areas = array(
                         </div>';
                         
                     if (count($previous_types) > 0) {
-                        echo '<h6>Pelanggan yang sebelumnya memiliki tipe motor:</h6>
+                        echo '<h6>Motor Yang Dimiliki Sebelum nya:</h6>
                             <div class="row">';
                     
                     // Sort by count in descending order
@@ -590,4 +676,4 @@ $areas = array(
 
     <?php require_once 'layout/footer.php' ?>
 </body>
-</html>
+</html

@@ -33,7 +33,7 @@ $area = isset($_GET['area']) ? $_GET['area'] : ''; // Default area dealer
 //         ORDER BY jumlah_service DESC
 //         LIMIT ? OFFSET ?";
 $query = "SELECT 
-            f.area_dealer, f.nama_dealer, f.nama_konsumen, f.no_hp, f.tipe_motor, 
+            s.area_dealer, s.nama_dealer, f.nama_konsumen, f.no_hp, f.tipe_motor, 
             f.tanggal_beli_motor, f.nomor_rangka, s.tanggal_terakhir_service,
             COUNT(hs.id) AS jumlah_service
         FROM `faktur` f 
