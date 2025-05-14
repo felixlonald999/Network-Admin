@@ -19,7 +19,11 @@ do {
             f.no_hp,
             f.nomor_rangka,
             f.tipe_motor,
-            f.tanggal_beli_motor
+            f.tanggal_beli_motor, 
+            f.pekerjaan,
+            f.pendidikan,
+            f.tipe_pembelian,
+            f.tenor_kredit
         FROM faktur f
         JOIN data_customer dc 
             ON f.nama_konsumen = dc.nama_customer 
@@ -43,7 +47,7 @@ do {
         $params = [];
 
         foreach ($rows as $index => $row) {
-            $values[] = "(?,?,?,?,?,?,?)";
+            $values[] = "(?,?,?,?,?,?,?,?,?,?,?)";
 
             $params[] = $row['id_customer'];
             $params[] = $row['nama_konsumen'];
@@ -52,11 +56,15 @@ do {
             $params[] = $row['nomor_rangka'];
             $params[] = $row['tipe_motor'];
             $params[] = $row['tanggal_beli_motor'];
+            $params[] = $row['pekerjaan'];
+            $params[] = $row['pendidikan'];
+            $params[] = $row['tipe_pembelian'];
+            $params[] = $row['tenor_kredit'];
         }
 
         $sql = "
             INSERT INTO data_motor 
-                (id_customer, nama_konsumen, ktp, no_hp, nomor_rangka, tipe_motor, tanggal_beli_motor)
+                (id_customer, nama_konsumen, ktp, no_hp, nomor_rangka, tipe_motor, tanggal_beli_motor, pekerjaan, pendidikan, tipe_pembelian, tenor_kredit)
             VALUES " . implode(',', $values);
 
         $pdo->beginTransaction();

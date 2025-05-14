@@ -324,30 +324,39 @@ $areas = array(
             } else {
                 // Membangun query SQL dengan filter tambahan
                 $where_conditions = [];
+                $where_conditions2 = [];
                 
                 // Filter untuk tipe motor
                 if (!empty($motor_type)) {
                     $where_conditions[] = "latest.tipe_motor LIKE '%" . $conn->real_escape_string($motor_type) . "%'";
+                    $where_conditions2[] = "tipe_motor LIKE '%" . $conn->real_escape_string($motor_type) . "%'";
                 }
                 
                 // Filter untuk area dealer
                 if (!empty($area_dealer)) {
                     $where_conditions[] = "latest.area_dealer = '" . $conn->real_escape_string($area_dealer) . "'";
+                    $where_conditions2[] = "area_dealer = '" . $conn->real_escape_string($area_dealer) . "'";
                 }
                 
                 // Filter untuk tahun dan bulan
                 if (!empty($year)) {
                     $where_conditions[] = "YEAR(latest.tanggal_beli_motor) = " . $conn->real_escape_string($year);
+                    $where_conditions2[] = "YEAR(tanggal_beli_motor) = " . $conn->real_escape_string($year);
                 }
                 
                 if (!empty($month)) {
                     $where_conditions[] = "MONTH(latest.tanggal_beli_motor) = " . $conn->real_escape_string($month);
+                    $where_conditions2[] = "MONTH(tanggal_beli_motor) = " . $conn->real_escape_string($month);
                 }
                 
                 // Menggabungkan kondisi WHERE
                 $where_clause = "latest.rn = 1";
                 if (!empty($where_conditions)) {
                     $where_clause .= " AND " . implode(" AND ", $where_conditions);
+                }
+                $where_clause2 = 'id_customer is not null';
+                if (!empty($where_conditions2)) {
+                    $where_clause2 .= " AND " . implode(" AND ", $where_conditions2);
                 }
                 
                 // Query SQL untuk mengambil data motor terakhir dan ALL previous motorcycles
@@ -387,6 +396,10 @@ $areas = array(
                 // Menjalankan query
                 $result = $conn->query($sql);
 
+                $sql2 = "SELECT area_dealer, COUNT(*) as jumlah_motor FROM data_motor WHERE $where_clause2 GROUP BY area_dealer";
+
+                $result2 = $conn->query($sql2);
+
                 if ($result && $result->num_rows > 0) {
                     // Array untuk menyimpan semua tipe motor sebelumnya
                     $previous_types = array();
@@ -407,12 +420,12 @@ $areas = array(
                                 $first_time_buyers++;
                             }
                             
-                            // Menghitung jumlah motor per area
+                            // Menghitung jumlah motor per area menggunakan total_motors
                             $area = $row['area_dealer'];
                             if (!isset($area_counts[$area])) {
-                                $area_counts[$area] = 1;
+                                $area_counts[$area] = 1; // Menggunakan total_motors
                             } else {
-                                $area_counts[$area]++;
+                                $area_counts[$area] ++; // Menambahkan total_motors
                             }
                         }
                         
@@ -460,11 +473,14 @@ $areas = array(
                         }
                     }
 
+                    // Menghitung total motor dari semua area
+                    $total_motors = array_sum($area_counts);
+
                     // Menampilkan info jumlah data
                     echo '<div class="row mt-4">
                             <div class="col-12">
                                 <div class="alert alert-success" role="alert">
-                                    <i class="fas fa-check-circle me-2"></i>Ditemukan ' . $customer_count . ' pelanggan dengan ' . $filter_description . '
+                                    <i class="fas fa-check-circle me-2"></i>Ditemukan ' . $customer_count . ' pelanggan dengan  motor terakhir ' . $filter_description . '
                                 </div>
                             </div>
                           </div>';
@@ -488,8 +504,16 @@ $areas = array(
                                     <div class="card-body">
                                         <div class="row">';
                     
-                    // Menghitung total motor untuk persentase
-                    $total_motors = array_sum($area_counts);
+                    // Menggunakan data dari result2 untuk menghitung total motor
+                    $area_counts = array();
+                    $total_motors = 0;
+                    
+                    if ($result2 && $result2->num_rows > 0) {
+                        while($row2 = $result2->fetch_assoc()) {
+                            $area_counts[$row2['area_dealer']] = $row2['jumlah_motor'];
+                            $total_motors += $row2['jumlah_motor'];
+                        }
+                    }
                     
                     // Sort area_counts secara descending berdasarkan jumlah
                     arsort($area_counts);

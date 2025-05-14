@@ -19,19 +19,19 @@ if ($conn->connect_error) {
 }
 
 // Ambil parameter pagination
-$limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 2000;  // Default 1000 row per request
+$limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 300;  // Default 1000 row per request
 $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;   // Default mulai dari awal
-
+$area_dealer = isset($_GET['area_dealer']) ? $_GET['area_dealer'] : '';
 // Query untuk mengambil data
 $query = "SELECT *
           FROM `data_customer` dc 
           where dc.tanggal_lahir IS NOT NULL
-            AND MONTH(dc.tanggal_lahir) = MONTH(CURDATE())
+            AND MONTH(dc.tanggal_lahir) = MONTH(CURDATE()) and area_dealer = ?
           ORDER BY dc.ro_sales DESC, dc. ro_service DESC
           LIMIT ? OFFSET ?";
 
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $limit, $offset);
+$stmt->bind_param("sii", $area_dealer, $limit, $offset);
 $stmt->execute();
 $res = $stmt->get_result();
 $data = $res->fetch_all(MYSQLI_ASSOC);
