@@ -29,6 +29,7 @@ while ($row = mysqli_fetch_assoc($query)) {
     $service[trim($row['nomor_rangka'])] = [
         'nomor_rangka' => trim($row['nomor_rangka']),
         'tanggal_terakhir_service' => $row['tanggal_terakhir_service'],
+        'total_omzet' => $row['total_omzet']
     ];
 }
 
@@ -37,7 +38,7 @@ $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 while ($row = mysqli_fetch_assoc($query)) {
     $history[$row['tanggal_service']][trim($row['nomor_rangka'])] = [
         'tanggal_service' => $row['tanggal_service'],
-        'nomor_rangka' => trim($row['nomor_rangka']),
+        'nomor_rangka' => trim($row['nomor_rangka'])
     ];
 }
 
@@ -97,7 +98,7 @@ try {
     $duplicate_pairs = [];
     $batch = 3000;
 
-    if ($worksheet->getCell('A1')->getValue() !== "dealer" || $worksheet->getCell('L1')->getValue() !== "part_name") {
+    if (trim($worksheet->getCell('A1')->getValue()) !== "dealer" || trim($worksheet->getCell('L1')->getValue()) !== "part_name") {
         throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
     }
 
@@ -110,13 +111,14 @@ try {
         $nopol              = $worksheet->getCell('C' . $row)->getValue(); // plate
         $nama_konsumen      = trim($worksheet->getCell('D' . $row)->getValue()); // nama
         $no_ktp             = trim($worksheet->getCell('E' . $row)->getValue()); // ktp
-        $alamat             = $worksheet->getCell('F' . $row)->getValue() ?? '-'; // Address
+        $alamat             = trim($worksheet->getCell('F' . $row)->getValue() ?? '-'); // Address
         $no_hp              = $worksheet->getCell('G' . $row)->getValue(); // telpon
         $tipe_motor         = $worksheet->getCell('H' . $row)->getValue() ?? '-'; // model_name
         $nomor_rangka       = trim($worksheet->getCell('I' . $row)->getValue()); // no_rangka
-        $kilometer          = $worksheet->getCell('J' . $row)->getValue() ?? '0'; // milage
-        $tipe_service       = $worksheet->getCell('K' . $row)->getValue() ?? '-'; // Service Type
-        $sparepart          = $worksheet->getCell('L' . $row)->getValue() ?? '-'; // Sparepart
+        $kilometer          = str_replace([',','.'], '', trim($worksheet->getCell('J' . $row)->getValue() ?? '0')); // milage
+        $tipe_service       = $worksheet->getCell('K' . $row)->getValue() ?? '-'; // package
+        $sparepart          = $worksheet->getCell('L' . $row)->getValue() ?? '-'; // part_name
+        $omzet              = str_replace([',','.'], '', trim($worksheet->getCell('M' . $row)->getValue() ?? '0')); // omzet
 
         // Validasi data tanggal service
         if (is_numeric($tanggal_service)) {
@@ -145,18 +147,8 @@ try {
                 $errors_summary['same_service_date']['rows'][] = $row;
             } else {
                 $import_history[] = [
-                    $kode_dealer,
-                    $nama_dealer,
-                    $area_dealer,
-                    $nomor_rangka,
-                    $nopol,
-                    $nama_konsumen,
-                    $no_hp,
-                    $no_ktp,
-                    $kilometer,
-                    $tipe_service,
-                    $tanggal_service,
-                    $sparepart
+                    $kode_dealer, $nama_dealer,$area_dealer, $nomor_rangka, $nopol, $nama_konsumen, 
+                    $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service, $sparepart, $omzet
                 ];
 
                 $history[$tanggal_service][$nomor_rangka] = [
@@ -185,20 +177,10 @@ try {
                 $check_tanggal_service = date("Y-m-d", strtotime($existing_data[12]));
 
                 if ($tanggal_service > $check_tanggal_service) {
+                    $omzet += $existing_data[13];
                     $import_service[$index] = [
-                        $kode_dealer,
-                        $nama_dealer,
-                        $area_dealer,
-                        $nomor_rangka,
-                        $nopol,
-                        $tipe_motor,
-                        $nama_konsumen,
-                        $alamat,
-                        $no_hp,
-                        $no_ktp,
-                        $kilometer,
-                        $tipe_service,
-                        $tanggal_service
+                        $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor, $nama_konsumen, 
+                        $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service, $omzet
                     ];
                 }
 
@@ -209,24 +191,14 @@ try {
 
                 if ($tanggal_service > $check_tanggal_service) {
                     $import_service[] = [
-                        $kode_dealer,
-                        $nama_dealer,
-                        $area_dealer,
-                        $nomor_rangka,
-                        $nopol,
-                        $tipe_motor,
-                        $nama_konsumen,
-                        $alamat,
-                        $no_hp,
-                        $no_ktp,
-                        $kilometer,
-                        $tipe_service,
-                        $tanggal_service
+                        $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor, $nama_konsumen, 
+                        $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service, $omzet
                     ];
 
                     $service[$nomor_rangka] = [
                         'nomor_rangka' => $nomor_rangka,
-                        'tanggal_terakhir_service' => $tanggal_service
+                        'tanggal_terakhir_service' => $tanggal_service,
+                        'total_omzet' => $omzet += $service[$nomor_rangka]['total_omzet']
                     ];
                     if (count($import_service) >= $batch) {
                         insert_batch($conn, $import_service);
@@ -238,24 +210,14 @@ try {
                 $errors_summary['duplicate']['rows'][] = $row;
             } else {
                 $import_service[] = [
-                    $kode_dealer,
-                    $nama_dealer,
-                    $area_dealer,
-                    $nomor_rangka,
-                    $nopol,
-                    $tipe_motor,
-                    $nama_konsumen,
-                    $alamat,
-                    $no_hp,
-                    $no_ktp,
-                    $kilometer,
-                    $tipe_service,
-                    $tanggal_service
+                    $kode_dealer,$nama_dealer, $area_dealer, $nomor_rangka, $nopol, $tipe_motor, $nama_konsumen,
+                    $alamat, $no_hp, $no_ktp, $kilometer, $tipe_service, $tanggal_service, $omzet
                 ];
 
                 $service[$nomor_rangka] = [
                     'nomor_rangka' => $nomor_rangka,
-                    'tanggal_terakhir_service' => $tanggal_service
+                    'tanggal_terakhir_service' => $tanggal_service,
+                    'total_omzet' => $omzet
                 ];
 
                 if (count($import_service) >= $batch) {
@@ -278,6 +240,7 @@ try {
     }
 
     // Buat ringkasan hasil impor
+    $_SESSION['import_summary']['success'][] = "$filename berhasil diimpor.";
     $_SESSION['import_summary']['success'][]  = "$imported_count data service berhasil diimpor.";
     $_SESSION['import_summary']['success'][]  = "$imported_history data history service berhasil diimpor.";
     $_SESSION['import_summary']['success'][]  = "$updated_count data service berhasil diupdate.";
@@ -308,12 +271,12 @@ function history_insert($conn, $import_data)
         $conn->query("ALTER TABLE history_service ADD UNIQUE INDEX idx_unique_nokatgl (nomor_rangka, tanggal_service)");
     }
     $conn->query("ALTER TABLE history_service DISABLE KEYS;");
-    $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
+    $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
 
     // Menyiapkan SQL
     $sql = "INSERT INTO history_service (
                 kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, nama_konsumen, 
-                no_hp, no_ktp, kilometer, tipe_service, tanggal_service, sparepart, created_at
+                no_hp, no_ktp, kilometer, tipe_service, tanggal_service, sparepart, omzet, created_at
             ) VALUES $placeholders;";
 
     // Menyiapkan statement
@@ -347,15 +310,15 @@ function insert_batch($conn, $import_data)
         // Tambahkan index hanya jika belum ada
         $conn->query("ALTER TABLE service ADD UNIQUE INDEX nomor_rangka (nomor_rangka)");
     }
-    $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
+    $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($import_data)), ', ');
 
     // Menyiapkan SQL
     $sql = "INSERT INTO service (
         kode_dealer, nama_dealer, area_dealer, nomor_rangka, nopol, tipe_motor, 
-        nama_konsumen, alamat, no_hp, no_ktp, kilometer, tipe_service, tanggal_terakhir_service, created_at
+        nama_konsumen, alamat, no_hp, no_ktp, kilometer, tipe_service, tanggal_terakhir_service, total_omzet, created_at
     ) VALUES $placeholders
     ON DUPLICATE KEY UPDATE 
-        tanggal_terakhir_service = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(tanggal_terakhir_service), tanggal_terakhir_service),
+        
         kode_dealer = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(kode_dealer), kode_dealer),
         nama_dealer = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(nama_dealer), nama_dealer),
         area_dealer = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(area_dealer), area_dealer),
@@ -366,7 +329,9 @@ function insert_batch($conn, $import_data)
         no_hp = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(no_hp), no_hp),
         no_ktp = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(no_ktp), no_ktp),
         kilometer = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(kilometer), kilometer),
-        tipe_service = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(tipe_service), tipe_service);";
+        tipe_service = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(tipe_service), tipe_service),
+        total_omzet = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, total_omzet + VALUES(total_omzet), total_omzet),
+        tanggal_terakhir_service = IF(VALUES(tanggal_terakhir_service) > tanggal_terakhir_service, VALUES(tanggal_terakhir_service), tanggal_terakhir_service);";
 
 
     // Menyiapkan statement
