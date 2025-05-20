@@ -25,7 +25,7 @@ if(!isset($_SESSION['auth'])){
                         <div class="card">
                             <div class="card-body">
                                 <h2>Import Data Faktur</h2>
-                                <form action="proses/import_faktur_ver2.php" method="POST" enctype="multipart/form-data">
+                                <form action="proses/import_faktur_ver2_other_template.php" method="POST" enctype="multipart/form-data">
                                     <div class="input-group">
                                         <input type="file" class="form-control" name="filedata">
                                         <span class="input-group-append">

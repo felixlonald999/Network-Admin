@@ -70,9 +70,9 @@ try {
     $worksheet = $excel_obj->getActiveSheet();
     $excel_row = $worksheet->getHighestRow();
 
-    // dd($worksheet->getCell('F1')->getValue() . " - " . $worksheet->getCell('AL1')->getValue());
+    // dd($worksheet->getCell('F1')->getValue() . " - " . $worksheet->getCell('AN1')->getValue());
     // Cek apakah file Excel memiliki header yang benar
-    if ($worksheet->getCell('F1')->getValue() !== "Frame #" || $worksheet->getCell('AL1')->getValue() !== "Req Dealer") {
+    if ($worksheet->getCell('F1')->getValue() !== "Frame #" || $worksheet->getCell('AN1')->getValue() !== "Req Dealer") {
         throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
     }
 
@@ -80,7 +80,7 @@ try {
 
     // Proses data Excel
     for ($row = 2; $row <= $excel_row; $row++) { // Mulai dari baris 2 (baris pertama adalah header)
-        $kode_dealer = $worksheet->getCell('AL' . $row)->getValue(); // Dealer Code
+        $kode_dealer = $worksheet->getCell('AN' . $row)->getValue(); // Dealer Code
 
         if (isset($dealer[$kode_dealer])) {
             $nama_dealer        = $dealer[$kode_dealer]['nama_dealer']; // Dealer Name
@@ -91,18 +91,18 @@ try {
             $nama_konsumen      = $worksheet->getCell('J' . $row)->getValue(); // Customer Name
             $alamat             = $worksheet->getCell('M' . $row)->getValue(); // Address1
             $kabupaten          = $worksheet->getCell('R' . $row)->getValue(); // City
-            $pekerjaan          = $worksheet->getCell('X' . $row)->getValue(); // Occupation
+            $pekerjaan          = $worksheet->getCell('Y' . $row)->getValue(); // Occupation
             $pekerjaan          = ($pekerjaan === null || $pekerjaan === '') ? '-' : $pekerjaan; // default to '-'
-            $tgl_lahir          = $worksheet->getCell('W' . $row)->getValue(); // Birth Date
+            $tgl_lahir          = $worksheet->getCell('X' . $row)->getValue(); // Birth Date
             // $tanggal_lahir      = empty($tgl_lahir) ? null : date("Y-m-d", strtotime($tgl_lahir)); // Birth Date
-            $no_hp              = $worksheet->getCell('T' . $row)->getValue(); // Phone
-            $pendidikan         = $worksheet->getCell('AM' . $row)->getValue(); // Education
-            $pendidikan          = ($pendidikan === null || $pendidikan === '') ? '-' : $pendidikan; // Occupation
+            $no_hp              = $worksheet->getCell('U' . $row)->getValue(); // Phone
+            $pendidikan         = $worksheet->getCell('AO' . $row)->getValue(); // Education
+            $pendidikan         = ($pendidikan === null || $pendidikan === '') ? '-' : $pendidikan; // Occupation
             $raw_ktp            = $worksheet->getCell('K' . $row)->getValue(); // KTP No.
-            $tipe_pembelian     = $worksheet->getCell('AG' . $row)->getValue(); // Payment Type
-            $tenor_kredit       = $worksheet->getCell('AI' . $row)->getValue(); // Term Payment
-            $tenor_kredit       = ($tenor_kredit === null || $tenor_kredit === '') ? '-' : $tenor_kredit; // default to '-'
-            $tanggal_beli_motor = $worksheet->getCell('AJ' . $row)->getValue(); // Purchase Date
+            $tipe_pembelian     = $worksheet->getCell('AH' . $row)->getValue(); // Payment Type
+            $tenor_kredit       = $worksheet->getCell('AK' . $row)->getValue(); // Term Payment
+            $tenor_kredit       = ($tenor_kredit === null || $tenor_kredit == '') ? '-' : $tenor_kredit; // default to '-'
+            $tanggal_beli_motor = $worksheet->getCell('AL' . $row)->getValue(); // Purchase Date
 
             // dd($no_hp);
             //menyesuaikan format no hp
@@ -110,9 +110,8 @@ try {
             if (is_numeric($no_hp) && preg_match('/E\+?/i', $no_hp)) {
                 $no_hp = number_format((float)$no_hp, 0, '', ''); // Convert dari scientific ke angka full
             } else {
-                $no_hp = (int)$no_hp;
+                $no_hp = (string)$no_hp;
             }
-            // dd($no_hp);
 
             //convert dan cek ktp
             if (is_numeric($raw_ktp) && preg_match('/E\+?/i', $raw_ktp)) {
@@ -273,7 +272,8 @@ function parseTanggal($tanggal)
 }
 
 //function untuk validasi nomor hp sebelum masuk ke database
-function isValidPhone($nohp) {
+function isValidPhone($nohp)
+{
     $nohp = (string) $nohp;
 
     // Cek angka semua & panjang 11-14 digit

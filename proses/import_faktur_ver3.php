@@ -70,9 +70,9 @@ try {
     $worksheet = $excel_obj->getActiveSheet();
     $excel_row = $worksheet->getHighestRow();
 
-    // dd($worksheet->getCell('F1')->getValue() . " - " . $worksheet->getCell('AL1')->getValue());
+    // dd($worksheet->getCell('D1')->getValue() . " - " . $worksheet->getCell('B1')->getValue());
     // Cek apakah file Excel memiliki header yang benar
-    if ($worksheet->getCell('F1')->getValue() !== "Frame #" || $worksheet->getCell('AL1')->getValue() !== "Req Dealer") {
+    if ($worksheet->getCell('D1')->getValue() !== "Frame No." || $worksheet->getCell('B1')->getValue() !== "Dealer Code") {
         throw new Exception("Format file Excel tidak valid. Pastikan file sesuai dengan template yang diberikan.");
     }
 
@@ -80,39 +80,33 @@ try {
 
     // Proses data Excel
     for ($row = 2; $row <= $excel_row; $row++) { // Mulai dari baris 2 (baris pertama adalah header)
-        $kode_dealer = $worksheet->getCell('AL' . $row)->getValue(); // Dealer Code
+        $kode_dealer = $worksheet->getCell('B' . $row)->getValue(); // Dealer Code
 
         if (isset($dealer[$kode_dealer])) {
             $nama_dealer        = $dealer[$kode_dealer]['nama_dealer']; // Dealer Name
             $area_dealer        = $dealer[$kode_dealer]['area']; // Area
-            $tipe_motor         = $worksheet->getCell('D' . $row)->getValue(); // Model
-            $nomor_rangka       = $worksheet->getCell('F' . $row)->getValue(); // Frame No.
-            $warna_motor        = $worksheet->getCell('E' . $row)->getValue(); // Faktur Color
+            $tipe_motor         = $worksheet->getCell('H' . $row)->getValue(); // Model
+            $nomor_rangka       = $worksheet->getCell('D' . $row)->getValue(); // Frame No.
+            $warna_motor        = null; // Color
             $nama_konsumen      = $worksheet->getCell('J' . $row)->getValue(); // Customer Name
-            $alamat             = $worksheet->getCell('M' . $row)->getValue(); // Address1
-            $kabupaten          = $worksheet->getCell('R' . $row)->getValue(); // City
-            $pekerjaan          = $worksheet->getCell('X' . $row)->getValue(); // Occupation
-            $pekerjaan          = ($pekerjaan === null || $pekerjaan === '') ? '-' : $pekerjaan; // default to '-'
-            $tgl_lahir          = $worksheet->getCell('W' . $row)->getValue(); // Birth Date
-            // $tanggal_lahir      = empty($tgl_lahir) ? null : date("Y-m-d", strtotime($tgl_lahir)); // Birth Date
-            $no_hp              = $worksheet->getCell('T' . $row)->getValue(); // Phone
-            $pendidikan         = $worksheet->getCell('AM' . $row)->getValue(); // Education
-            $pendidikan          = ($pendidikan === null || $pendidikan === '') ? '-' : $pendidikan; // Occupation
-            $raw_ktp            = $worksheet->getCell('K' . $row)->getValue(); // KTP No.
-            $tipe_pembelian     = $worksheet->getCell('AG' . $row)->getValue(); // Payment Type
-            $tenor_kredit       = $worksheet->getCell('AI' . $row)->getValue(); // Term Payment
-            $tenor_kredit       = ($tenor_kredit === null || $tenor_kredit === '') ? '-' : $tenor_kredit; // default to '-'
-            $tanggal_beli_motor = $worksheet->getCell('AJ' . $row)->getValue(); // Purchase Date
+            $alamat             = null; // Address1
+            $kabupaten          = null; // City
+            $pekerjaan          = null; // Occupation
+            $tgl_lahir          = null; // Birth Date
+            $no_hp              = null; // Phone
+            $pendidikan         = null; // Education
+            $raw_ktp            = $worksheet->getCell('I' . $row)->getValue(); // KTP No.
+            $tipe_pembelian     = null; // Payment Type
+            $tenor_kredit       = null; // Term Payment
+            $tanggal_beli_motor = $worksheet->getCell('M' . $row)->getValue(); // Purchase Date
 
-            // dd($no_hp);
             //menyesuaikan format no hp
-            $no_hp = str_replace(',', '.', $no_hp); // Ubah koma jadi titik biar aman dari Excel lokal
-            if (is_numeric($no_hp) && preg_match('/E\+?/i', $no_hp)) {
-                $no_hp = number_format((float)$no_hp, 0, '', ''); // Convert dari scientific ke angka full
-            } else {
-                $no_hp = (int)$no_hp;
-            }
-            // dd($no_hp);
+            // $no_hp = str_replace(',', '.', $no_hp); // Ubah koma jadi titik biar aman dari Excel lokal
+            // if (is_numeric($no_hp) && preg_match('/E\+?/i', $no_hp)) {
+            //     $no_hp = number_format((float)$no_hp, 0, '', ''); // Convert dari scientific ke angka full
+            // } else {
+            //     $no_hp = (int)$no_hp;
+            // }
 
             //convert dan cek ktp
             if (is_numeric($raw_ktp) && preg_match('/E\+?/i', $raw_ktp)) {
@@ -121,11 +115,9 @@ try {
             } else {
                 $no_ktp = (string)$raw_ktp;
             }
-            // dd($no_ktp . "-". strlen($no_ktp));
 
-            // dd($tgl_lahir. " - " . $tanggal_beli_motor);
             // Ubah tanggal lahir ke format Y-m-d
-            $tgl_lahir = parseTanggal($tgl_lahir);
+            // $tgl_lahir = parseTanggal($tgl_lahir);
 
             // Ubah tanggal beli motor ke format Y-m-d
             $tanggal_beli_motor = parseTanggal($tanggal_beli_motor);
@@ -135,9 +127,6 @@ try {
             if (empty($nomor_rangka)) {
                 $errors_summary['empty_nomor_rangka']['count']++;
                 $errors_summary['empty_nomor_rangka']['rows'][] = $row;
-            } else if (!isValidPhone($no_hp)) {
-                $errors_summary['no_hp_invalid']['count']++;
-                $errors_summary['no_hp_invalid']['rows'][] = $row;
             } else if (isset($faktur[$nomor_rangka])) {
                 $errors_summary['duplicate']['count']++;
                 $errors_summary['duplicate']['rows'][] = $row;
@@ -252,6 +241,7 @@ function parseTanggal($tanggal)
         'm/d/Y H:i:s',
         'Y-m-d H:i:s',
         'd-m-Y H:i:s',
+        'm-d-Y H:i:s',
         'd/m/Y',
         'm/d/Y',
         'Y-m-d',
