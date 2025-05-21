@@ -5,6 +5,7 @@ require("../library/PHPExcel.php");
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 
 // Data dealer untuk pengecekan area
@@ -86,14 +87,17 @@ try {
             $nama_konsumen      = $worksheet->getCell('P' . $row)->getValue(); // Customer Name
             $alamat             = $worksheet->getCell('Q' . $row)->getValue(); // Address1
             $kabupaten          = $worksheet->getCell('T' . $row)->getValue(); // City
-            $pekerjaan          = $worksheet->getCell('U' . $row)->getValue() ?? '-'; // Occupation
+            $pekerjaan          = $worksheet->getCell('U' . $row)->getValue(); // Occupation
+            $pekerjaan          = ($pekerjaan === null || $pekerjaan === '') ? '-' : $pekerjaan; // default to '-'
             $tgl_lahir          = $worksheet->getCell('X' . $row)->getValue(); // Birth Date
             $tanggal_lahir      = empty($tgl_lahir) ? null : date("Y-m-d", strtotime($tgl_lahir)); // Birth Date
             $no_hp              = $worksheet->getCell('Y' . $row)->getValue(); // Phone
-            $pendidikan         = $worksheet->getCell('Z' . $row)->getValue() ?? '-'; // Education
+            $pendidikan         = $worksheet->getCell('Z' . $row)->getValue(); // Education
+            $pendidikan         = ($pendidikan === null || $pendidikan === '') ? '-' : $pendidikan; // Occupation
             $no_ktp             = $worksheet->getCell('AM' . $row)->getValue(); // KTP No.
             $tipe_pembelian     = $worksheet->getCell('AB' . $row)->getValue(); // Type of Purchase
-            $tenor_kredit       = $worksheet->getCell('AF' . $row)->getValue() ?? '-'; // Term Payment
+            $tenor_kredit       = $worksheet->getCell('AF' . $row)->getValue(); // Term Payment
+            $tenor_kredit       = ($tenor_kredit === null || $tenor_kredit == '') ? '-' : $tenor_kredit; // default to '-'
             $tanggal_beli_motor = date("Y-m-d", strtotime($worksheet->getCell('AG' . $row)->getValue())); // Purchase Date
 
             // Validasi data
