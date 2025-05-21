@@ -100,14 +100,6 @@ try {
             $tenor_kredit       = null; // Term Payment
             $tanggal_beli_motor = $worksheet->getCell('M' . $row)->getValue(); // Purchase Date
 
-            //menyesuaikan format no hp
-            // $no_hp = str_replace(',', '.', $no_hp); // Ubah koma jadi titik biar aman dari Excel lokal
-            // if (is_numeric($no_hp) && preg_match('/E\+?/i', $no_hp)) {
-            //     $no_hp = number_format((float)$no_hp, 0, '', ''); // Convert dari scientific ke angka full
-            // } else {
-            //     $no_hp = (int)$no_hp;
-            // }
-
             //convert dan cek ktp
             if (is_numeric($raw_ktp) && preg_match('/E\+?/i', $raw_ktp)) {
                 // Kalau ke-convert scientific, ubah jadi string angka utuh
@@ -116,12 +108,8 @@ try {
                 $no_ktp = (string)$raw_ktp;
             }
 
-            // Ubah tanggal lahir ke format Y-m-d
-            // $tgl_lahir = parseTanggal($tgl_lahir);
-
             // Ubah tanggal beli motor ke format Y-m-d
             $tanggal_beli_motor = parseTanggal($tanggal_beli_motor);
-            // dd($tgl_lahir. " - " . $tanggal_beli_motor);
 
             // Validasi data
             if (empty($nomor_rangka)) {
@@ -135,23 +123,8 @@ try {
                 $errors_summary['tanggal_invalid']['rows'][] = $row;
             } else {
                 $import_data[] = [
-                    $kode_dealer,
-                    $nama_dealer,
-                    $area_dealer,
-                    $tipe_motor,
-                    $warna_motor,
-                    $nomor_rangka,
-                    $nama_konsumen,
-                    $alamat,
-                    $kabupaten,
-                    $pekerjaan,
-                    $tgl_lahir,
-                    $no_hp,
-                    $pendidikan,
-                    $no_ktp,
-                    $tipe_pembelian,
-                    $tenor_kredit,
-                    $tanggal_beli_motor
+                    $kode_dealer, $nama_dealer, $area_dealer, $tipe_motor, $warna_motor, $nomor_rangka, $nama_konsumen, $alamat, 
+                    $kabupaten, $pekerjaan, $tgl_lahir, $no_hp, $pendidikan, $no_ktp, $tipe_pembelian, $tenor_kredit, $tanggal_beli_motor
                 ];
 
                 $imported_count++;
@@ -222,12 +195,9 @@ try {
 //function untuk mengubah format tanggal dari excel ke Y-m-d
 function parseTanggal($tanggal)
 {
-    // dd($tanggal);
     // 1. Kalau numeric, berarti Excel date
     if (is_numeric($tanggal)) {
-        // dd($tanggal);
         $dateObj = Date::excelToDateTimeObject($tanggal);
-        // dd($dateObj->format('Y-m-d'));
         return $dateObj->format('Y-m-d');
     }
 
@@ -250,9 +220,7 @@ function parseTanggal($tanggal)
     ];
 
     foreach ($possibleFormats as $format) {
-        // dd($tanggal);
         $dateObj = DateTime::createFromFormat($format, $tanggal);
-        // dd($dateObj);
         if ($dateObj && $dateObj->format($format) === $tanggal) {
             return $dateObj->format('Y-m-d');
         }

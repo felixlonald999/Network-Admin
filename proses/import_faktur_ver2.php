@@ -94,7 +94,6 @@ try {
             $pekerjaan          = $worksheet->getCell('X' . $row)->getValue(); // Occupation
             $pekerjaan          = ($pekerjaan === null || $pekerjaan === '') ? '-' : $pekerjaan; // default to '-'
             $tgl_lahir          = $worksheet->getCell('W' . $row)->getValue(); // Birth Date
-            // $tanggal_lahir      = empty($tgl_lahir) ? null : date("Y-m-d", strtotime($tgl_lahir)); // Birth Date
             $no_hp              = $worksheet->getCell('T' . $row)->getValue(); // Phone
             $pendidikan         = $worksheet->getCell('AM' . $row)->getValue(); // Education
             $pendidikan          = ($pendidikan === null || $pendidikan === '') ? '-' : $pendidikan; // Occupation
@@ -104,7 +103,6 @@ try {
             $tenor_kredit       = ($tenor_kredit === null || $tenor_kredit === '') ? '-' : $tenor_kredit; // default to '-'
             $tanggal_beli_motor = $worksheet->getCell('AJ' . $row)->getValue(); // Purchase Date
 
-            // dd($no_hp);
             //menyesuaikan format no hp
             $no_hp = str_replace(',', '.', $no_hp); // Ubah koma jadi titik biar aman dari Excel lokal
             if (is_numeric($no_hp) && preg_match('/E\+?/i', $no_hp)) {
@@ -112,7 +110,6 @@ try {
             } else {
                 $no_hp = (int)$no_hp;
             }
-            // dd($no_hp);
 
             //convert dan cek ktp
             if (is_numeric($raw_ktp) && preg_match('/E\+?/i', $raw_ktp)) {
@@ -121,15 +118,10 @@ try {
             } else {
                 $no_ktp = (string)$raw_ktp;
             }
-            // dd($no_ktp . "-". strlen($no_ktp));
 
-            // dd($tgl_lahir. " - " . $tanggal_beli_motor);
-            // Ubah tanggal lahir ke format Y-m-d
+            // Ubah tanggal lahir dan tanggal beli motor ke format Y-m-d
             $tgl_lahir = parseTanggal($tgl_lahir);
-
-            // Ubah tanggal beli motor ke format Y-m-d
             $tanggal_beli_motor = parseTanggal($tanggal_beli_motor);
-            // dd($tgl_lahir. " - " . $tanggal_beli_motor);
 
             // Validasi data
             if (empty($nomor_rangka)) {
@@ -146,23 +138,8 @@ try {
                 $errors_summary['tanggal_invalid']['rows'][] = $row;
             } else {
                 $import_data[] = [
-                    $kode_dealer,
-                    $nama_dealer,
-                    $area_dealer,
-                    $tipe_motor,
-                    $warna_motor,
-                    $nomor_rangka,
-                    $nama_konsumen,
-                    $alamat,
-                    $kabupaten,
-                    $pekerjaan,
-                    $tgl_lahir,
-                    $no_hp,
-                    $pendidikan,
-                    $no_ktp,
-                    $tipe_pembelian,
-                    $tenor_kredit,
-                    $tanggal_beli_motor
+                    $kode_dealer, $nama_dealer, $area_dealer, $tipe_motor, $warna_motor, $nomor_rangka, $nama_konsumen, $alamat,
+                    $kabupaten, $pekerjaan, $tgl_lahir, $no_hp, $pendidikan, $no_ktp,  $tipe_pembelian, $tenor_kredit, $tanggal_beli_motor
                 ];
 
                 $imported_count++;
@@ -233,12 +210,9 @@ try {
 //function untuk mengubah format tanggal dari excel ke Y-m-d
 function parseTanggal($tanggal)
 {
-    // dd($tanggal);
     // 1. Kalau numeric, berarti Excel date
     if (is_numeric($tanggal)) {
-        // dd($tanggal);
         $dateObj = Date::excelToDateTimeObject($tanggal);
-        // dd($dateObj->format('Y-m-d'));
         return $dateObj->format('Y-m-d');
     }
 
@@ -248,21 +222,11 @@ function parseTanggal($tanggal)
 
     // 2. Kalau string, coba parse beberapa format umum
     $possibleFormats = [
-        'd/m/Y H:i:s',
-        'm/d/Y H:i:s',
-        'Y-m-d H:i:s',
-        'd-m-Y H:i:s',
-        'd/m/Y',
-        'm/d/Y',
-        'Y-m-d',
-        'd-m-Y',
-        'm-d-Y',
+        'd/m/Y H:i:s', 'm/d/Y H:i:s', 'Y-m-d H:i:s', 'd-m-Y H:i:s', 'd/m/Y', 'm/d/Y', 'Y-m-d', 'd-m-Y', 'm-d-Y'
     ];
 
     foreach ($possibleFormats as $format) {
-        // dd($tanggal);
         $dateObj = DateTime::createFromFormat($format, $tanggal);
-        // dd($dateObj);
         if ($dateObj && $dateObj->format($format) === $tanggal) {
             return $dateObj->format('Y-m-d');
         }

@@ -93,7 +93,6 @@ try {
             $pekerjaan          = $worksheet->getCell('Y' . $row)->getValue(); // Occupation
             $pekerjaan          = ($pekerjaan === null || $pekerjaan === '') ? '-' : $pekerjaan; // default to '-'
             $tgl_lahir          = $worksheet->getCell('X' . $row)->getValue(); // Birth Date
-            // $tanggal_lahir      = empty($tgl_lahir) ? null : date("Y-m-d", strtotime($tgl_lahir)); // Birth Date
             $no_hp              = $worksheet->getCell('U' . $row)->getValue(); // Phone
             $pendidikan         = $worksheet->getCell('AO' . $row)->getValue(); // Education
             $pendidikan         = ($pendidikan === null || $pendidikan === '') ? '-' : $pendidikan; // Education
@@ -119,10 +118,8 @@ try {
                 $no_ktp = (string)$raw_ktp;
             }
 
-            // Ubah tanggal lahir ke format Y-m-d
+            // Ubah tanggal lahir dan tanggal beli motor ke format Y-m-d
             $tgl_lahir = parseTanggal($tgl_lahir);
-
-            // Ubah tanggal beli motor ke format Y-m-d
             $tanggal_beli_motor = parseTanggal($tanggal_beli_motor);
 
             // Validasi data
@@ -224,10 +221,7 @@ function parseTanggal($tanggal)
 
     // 2. Kalau string, coba parse beberapa format umum
     $possibleFormats = [
-        'd/m/Y H:i:s',
-        'm/d/Y H:i:s',
-        'd/m/Y',
-        'm/d/Y',
+        'd/m/Y H:i:s', 'm/d/Y H:i:s', 'd/m/Y', 'm/d/Y'
     ];
 
     foreach ($possibleFormats as $format) {

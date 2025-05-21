@@ -5,7 +5,6 @@ require("../library/PHPExcel.php");
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 
 // Data dealer untuk pengecekan area
