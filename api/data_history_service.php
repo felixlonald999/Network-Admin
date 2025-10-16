@@ -1,7 +1,8 @@
 <?php
 require("autoload.php");
 
-// Tangkap parameter dari URL
+ini_set('memory_limit', '1024M');
+
 $tahun = isset($_GET['tahun']) ? $_GET['tahun'] : null;
 $bulan = isset($_GET['bulan']) ? $_GET['bulan'] : null;
 $tahun_akhir = isset($_GET['tahun_akhir']) ? $_GET['tahun_akhir'] : null;
@@ -9,7 +10,7 @@ $bulan_akhir = isset($_GET['bulan_akhir']) ? $_GET['bulan_akhir'] : null;
 $area = isset($_GET['area']) ? $_GET['area'] : null;
 
 // Mulai membangun query SQL
-$stmt = "SELECT * FROM `faktur`";
+$stmt = "SELECT * FROM `history_service`";
 $params = [];
 $types = '';
 
@@ -17,28 +18,28 @@ $types = '';
 $conditions = [];
 
 // Logika untuk rentang tanggal
-if ($tahun && $bulan && $tahun_akhir && $bulan_akhir) {
+if ($tahun && $bulan && $bulan_akhir) {
     $tanggal_awal = sprintf('%s-%s-01', $tahun, $bulan);
-    $tanggal_akhir = date('Y-m-t', strtotime(sprintf('%s-%s-01', $tahun_akhir, $bulan_akhir)));
-    $conditions[] = "`tanggal_beli_motor` BETWEEN ? AND ?";
+    $tanggal_akhir = date('Y-m-t', strtotime(sprintf('%s-%s-01', $tahun, $bulan_akhir)));
+    $conditions[] = "`tanggal_service` BETWEEN ? AND ?";
     $params[] = $tanggal_awal;
     $params[] = $tanggal_akhir;
     $types .= 'ss';
 } else if ($tahun && $bulan) {
-    $conditions[] = "YEAR(`tanggal_beli_motor`) = ? AND MONTH(`tanggal_beli_motor`) = ?";
+    $conditions[] = "YEAR(`tanggal_service`) = ? AND MONTH(`tanggal_service`) = ?";
     $params[] = $tahun;
     $params[] = $bulan;
     $types .= 'ii';
 } else if ($tahun) {
-    $conditions[] = "YEAR(`tanggal_beli_motor`) = ?";
+    $conditions[] = "YEAR(`tanggal_service`) = ?";
     $params[] = $tahun;
     $types .= 'i';
 } else if ($bulan) {
-    $conditions[] = "MONTH(`tanggal_beli_motor`) = ?";
+    $conditions[] = "MONTH(`tanggal_service`) = ?";
     $params[] = $bulan;
     $types .= 'i';
 } else if ($bulan && $bulan_akhir) {
-    $conditions[] = "MONTH(`tanggal_beli_motor`) BETWEEN ? AND ?";
+    $conditions[] = "MONTH(`tanggal_service`) BETWEEN ? AND ?";
     $params[] = $bulan;
     $params[] = $bulan_akhir;
     $types .= 'ii';
