@@ -6,7 +6,6 @@ require("../library/PHPExcel.php");
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-ini_set('memory_limit', '4096M');
 
 // Data dealer untuk pengecekan area
 $stmt   = "SELECT * FROM `dealer`";
@@ -20,12 +19,6 @@ $stmt   = "SELECT * FROM `faktur`";
 $query  = mysqli_query($conn, $stmt) or die(mysqli_error($conn));
 while ($row = mysqli_fetch_array($query)) {
     $faktur[$row['nomor_rangka']] = $row['nomor_rangka'];
-}
-
-$stmt_service = "SELECT * FROM `service`";
-$query_service = mysqli_query($conn, $stmt_service) or die(mysqli_error($conn));
-while ($row = mysqli_fetch_array($query_service)) {
-    $service[$row['nomor_rangka']] = $row['nomor_rangka'];
 }
 
 $_SESSION['import_errors']  = [];
@@ -60,7 +53,6 @@ if (!move_uploaded_file($_FILES["filedata"]["tmp_name"], $target_file)) {
 }
 
 $imported_count = 0;
-$imported_service_count = 0;
 $errors_summary = [
     'no_hp_invalid'         => ['count' => 0, 'rows' => []],
     'duplicate'             => ['count' => 0, 'rows' => []],
@@ -119,38 +111,10 @@ try {
                 $errors_summary['duplicate']['rows'][] = $row;
             } else {
                 $import_data[] = [
-                    $kode_dealer,
-                    $nama_dealer,
-                    $area_dealer,
-                    $tipe_motor,
-                    $warna_motor,
-                    $nomor_rangka,
-                    $nama_konsumen,
-                    $alamat,
-                    $kabupaten,
-                    $pekerjaan,
-                    $tanggal_lahir,
-                    $no_hp,
-                    $pendidikan,
-                    $no_ktp,
-                    $tipe_pembelian,
-                    $tenor_kredit,
-                    $tanggal_beli_motor
+                    $kode_dealer, $nama_dealer, $area_dealer, $tipe_motor, $warna_motor, $nomor_rangka, 
+                    $nama_konsumen, $alamat, $kabupaten, $pekerjaan, $tanggal_lahir, $no_hp, $pendidikan, 
+                    $no_ktp, $tipe_pembelian, $tenor_kredit, $tanggal_beli_motor
                 ];
-
-                if (isset($service[$nomor_rangka])) {
-                    // Jika nomor rangka sudah ada di tabel service, lewati penambahan
-                    $errors_summary['duplicate_noka_service']['count']++;
-                    $errors_summary['duplicate_noka_service']['rows'][] = $row;
-
-                } else {
-                    $import_service[] = [
-                        $kode_dealer, $nama_dealer, $area_dealer, $nomor_rangka, $tipe_motor, 
-                        $nama_konsumen, $alamat, $no_hp, $no_ktp, $tanggal_beli_motor
-                    ];
-
-                    $imported_service_count++;
-                }
 
                 $imported_count++;
             }
@@ -161,26 +125,48 @@ try {
     }
 
     if (!empty($import_data)) {
-        insert_faktur($conn, $import_data);
-    }
+        $batch_size = 2000;
+        $batch_data = array_chunk($import_data, $batch_size);
+        foreach ($batch_data as $batch) {
+            // Buat placeholder (?,?,?,...) untuk setiap data yang diimport
+            $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($batch)), ', ');
 
-    if (!empty($import_service)) {
-        insert_service($conn, $import_service);
+            $sql = "INSERT INTO faktur (
+                    kode_dealer, nama_dealer, area_dealer, tipe_motor, warna_motor, nomor_rangka,
+                    nama_konsumen, alamat, kabupaten, pekerjaan, tanggal_lahir, no_hp, pendidikan, 
+                    no_ktp, tipe_pembelian, tenor_kredit, tanggal_beli_motor, created_at
+                ) VALUES $placeholders";
+
+            $stmt = $conn->prepare($sql);
+
+            // Flatten array menjadi satu dimensi untuk bind_param
+            $values = [];
+            foreach ($batch as $data) {
+                foreach ($data as $val) {
+                    $values[] = $val;
+                }
+            }
+
+            // Buat format tipe data untuk bind_param (misalnya "ssssssssssss")
+            $types = str_repeat('s', 17 * count($batch)); // Semua dianggap string ('s')
+
+            // Gunakan call_user_func_array untuk bind_param
+            $stmt->bind_param($types, ...$values);
+
+            // Eksekusi query
+            $stmt->execute();
+        }
     }
 
     // Buat ringkasan hasil impor
     $_SESSION['import_summary']['success'][] = $filename . " berhasil diimpor.";
-    $_SESSION['import_summary']['success'][]  = "$imported_count data faktur berhasil diimpor.";
-    $_SESSION['import_summary']['success'][]  = "$imported_service_count data service berhasil diimpor.";
+    $_SESSION['import_summary']['success'][]  = "$imported_count data berhasil diimpor.";
 
     if ($errors_summary['no_hp_invalid']['count'] > 0) {
         $_SESSION['import_summary']['no_hp_invalid'][] = "{$errors_summary['no_hp_invalid']['count']} data tidak diimpor karena No. HP tidak sesuai standar pada baris: " . implode(', ', $errors_summary['no_hp_invalid']['rows']);
     }
     if ($errors_summary['duplicate']['count'] > 0) {
         $_SESSION['import_summary']['duplicate'][] = "{$errors_summary['duplicate']['count']} data tidak diimpor karena duplikat nomor rangka pada baris: " . implode(', ', $errors_summary['duplicate']['rows']);
-    }
-    if ($errors_summary['duplicate_noka_service']['count'] > 0) {
-        $_SESSION['import_summary']['duplicate_noka_service'][] = "{$errors_summary['duplicate_noka_service']['count']} data tidak diimpor karena duplikat nomor rangka pada tabel service di baris: " . implode(', ', $errors_summary['duplicate_noka_service']['rows']);
     }
     if ($errors_summary['empty_nomor_rangka']['count'] > 0) {
         $_SESSION['import_summary']['empty_nomor_rangka'][] = "{$errors_summary['empty_nomor_rangka']['count']} data tidak diimpor karena nomor rangka kosong pada baris: " . implode(', ', $errors_summary['empty_nomor_rangka']['rows']);
@@ -190,64 +176,6 @@ try {
     }
 } catch (Exception $e) {
     $_SESSION['import_errors'][] = $e->getMessage();
-}
-
-function insert_faktur($conn, $data){
-    $batch_size = 2000;
-    $batch_data = array_chunk($data, $batch_size);
-    foreach ($batch_data as $batch) {
-        // Buat placeholder (?,?,?,...) untuk setiap data yang diimport
-        $placeholders = rtrim(str_repeat('(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($batch)), ', ');
-
-        $sql = "INSERT INTO faktur (
-                    kode_dealer, nama_dealer, area_dealer, tipe_motor, warna_motor, nomor_rangka,
-                    nama_konsumen, alamat, kabupaten, pekerjaan, tanggal_lahir, no_hp, pendidikan, 
-                    no_ktp, tipe_pembelian, tenor_kredit, tanggal_beli_motor, created_at
-                ) VALUES $placeholders";
-
-        $stmt = $conn->prepare($sql);
-
-        // Flatten array menjadi satu dimensi untuk bind_param
-        $values = [];
-        foreach ($batch as $data) {
-            foreach ($data as $val) {
-                $values[] = $val;
-            }
-        }
-
-        $types = str_repeat('s', 17 * count($batch));
-        $stmt->bind_param($types, ...$values);
-        $stmt->execute();
-    }
-}
-
-function insert_service($conn, $data){
-    $batch_size = 2000;
-    $batch_data = array_chunk($data, $batch_size);
-
-    foreach ($batch_data as $batch) {
-        // Buat placeholder (?,?,?,...) untuk setiap data yang diimport
-        $placeholders = rtrim(str_repeat('( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW()), ', count($batch)), ', ');
-
-        $sql = "INSERT INTO service (
-                    kode_dealer, nama_dealer, area_dealer, nomor_rangka, tipe_motor, nama_konsumen,
-                    alamat, no_hp, no_ktp, tanggal_beli_motor, created_at
-                ) VALUES $placeholders";
-
-        $stmt = $conn->prepare($sql);
-
-        // Flatten array menjadi satu dimensi untuk bind_param
-        $values = [];
-        foreach ($batch as $data) {
-            foreach ($data as $val) {
-                $values[] = $val;
-            }
-        }
-
-        $types = str_repeat('s', 10 * count($batch));
-        $stmt->bind_param($types, ...$values);
-        $stmt->execute();
-    }
 }
 
 header('location: ../import_faktur.php');
