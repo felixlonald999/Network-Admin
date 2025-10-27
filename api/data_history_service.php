@@ -21,25 +21,25 @@ $conditions = [];
 if ($tahun && $bulan && $bulan_akhir) {
     $tanggal_awal = sprintf('%s-%s-01', $tahun, $bulan);
     $tanggal_akhir = date('Y-m-t', strtotime(sprintf('%s-%s-01', $tahun, $bulan_akhir)));
-    $conditions[] = "`tanggal_service` BETWEEN ? AND ?";
+    $conditions[] = "`created_at` BETWEEN ? AND ?";
     $params[] = $tanggal_awal;
     $params[] = $tanggal_akhir;
     $types .= 'ss';
 } else if ($tahun && $bulan) {
-    $conditions[] = "YEAR(`tanggal_service`) = ? AND MONTH(`tanggal_service`) = ?";
+    $conditions[] = "YEAR(`created_at`) = ? AND MONTH(`created_at`) = ?";
     $params[] = $tahun;
     $params[] = $bulan;
     $types .= 'ii';
 } else if ($tahun) {
-    $conditions[] = "YEAR(`tanggal_service`) = ?";
+    $conditions[] = "YEAR(`created_at`) = ?";
     $params[] = $tahun;
     $types .= 'i';
 } else if ($bulan) {
-    $conditions[] = "MONTH(`tanggal_service`) = ?";
+    $conditions[] = "MONTH(`created_at`) = ?";
     $params[] = $bulan;
     $types .= 'i';
 } else if ($bulan && $bulan_akhir) {
-    $conditions[] = "MONTH(`tanggal_service`) BETWEEN ? AND ?";
+    $conditions[] = "MONTH(`created_at`) BETWEEN ? AND ?";
     $params[] = $bulan;
     $params[] = $bulan_akhir;
     $types .= 'ii';
