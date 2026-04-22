@@ -9,10 +9,22 @@
     $(document).ready(function() {
         $('.select2').select2();
 
-        $('.table').DataTable(
-            {
-                "pageLength": 25
-            }
-        );
+        $('.table').DataTable({
+            "pageLength": 25
+        });
+    });
+
+    $('#mutasiSalesmanModal').on('shown.bs.modal', function() {
+        $('#kode_dealer').select2({
+            dropdownParent: $('#mutasiSalesmanModal'),
+            width: '100%'
+        });
+    });
+
+    $('#tambahSalesmanModal').on('shown.bs.modal', function() {
+        $('#kode_dealers').select2({
+            dropdownParent: $('#tambahSalesmanModal'),
+            width: '100%'
+        });
     });
 </script>

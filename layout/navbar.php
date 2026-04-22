@@ -29,6 +29,12 @@
             <li class="nav-item active">
                 <a class="nav-link" href="cron.php">CRON</a>
             </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="dealer.php">Data Dealer</a>
+            </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="salesman.php">Data Salesman</a>
+            </li>
         </ul>
         <ul class="navbar-nav ml-auto">
             <li class="nav-item active">
