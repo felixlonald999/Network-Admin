@@ -4,8 +4,8 @@ $data = array(
     'status' => isset($_POST['status']) ? $_POST['status'] : ''
 );
 
-// URL API Server B untuk menerima update status
-$url_server_b = "http://10.10.10.2/Network-Admin/api/receive_ubah_status_salesman.php";
+// URL API Server B untuk menerima update status karyawan
+$url_server_b = "http://10.10.10.2/Network-Admin/api/receive_ubah_status_karyawan.php";
 
 $ch = curl_init($url_server_b);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

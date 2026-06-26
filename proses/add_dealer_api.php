@@ -28,10 +28,14 @@ $ch = curl_init($url_server_b);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+// Tambahkan timeout agar tidak menggantung jika Server B bermasalah
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36');
 // Eksekusi cURL dan tangkap respon dari Server B
 $response = curl_exec($ch);
 $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$curl_error = curl_error($ch);
 curl_close($ch);
 
 // Evaluasi respon dari API Server B
@@ -47,7 +51,7 @@ if ($response) {
         $_SESSION['alert_message'] = $msg;
     }
 } else {
-    $_SESSION['alert_message'] = "Gagal terhubung ke Server B atau Server B tidak merespon.";
+    $_SESSION['alert_message'] = "Gagal terhubung ke Server B atau Server B tidak merespon. Error: " . $curl_error;
 }
 
 // Redirect kembali ke halaman dealer

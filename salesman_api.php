@@ -315,7 +315,12 @@ if ($response) {
 
                         // update tampilan tabel
                         btn.closest('tr').find('td:eq(1)').text(newStatus.toUpperCase());
+                    } else {
+                        alert("Gagal mengubah status: " + res);
                     }
+                },
+                error: function(xhr, status, error) {
+                    alert("Terjadi kesalahan koneksi saat mengubah status.\nStatus: " + status + "\nError: " + error + "\nResponse: " + xhr.responseText);
                 }
             });
         });

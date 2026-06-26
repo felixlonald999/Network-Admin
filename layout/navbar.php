@@ -35,6 +35,9 @@
             <li class="nav-item active">
                 <a class="nav-link" href="salesman.php">Data Salesman</a>
             </li>
+            <li class="nav-item active">
+                <a class="nav-link" href="karyawan_api.php">Data Karyawan API</a>
+            </li>
         </ul>
         <ul class="navbar-nav ml-auto">
             <li class="nav-item active">
